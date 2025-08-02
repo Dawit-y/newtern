@@ -1,8 +1,17 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { type DefaultSession, type NextAuthConfig } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
+import Credentials from "next-auth/providers/credentials";
+import bcrypt from "bcrypt";
 
 import { db } from "@/server/db";
+
+import { z } from "zod";
+
+const credentialsSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1, "Password is required"),
+});
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -33,24 +42,71 @@ declare module "next-auth" {
 export const authConfig = {
   providers: [
     DiscordProvider,
-    /**
-     * ...add more providers here.
-     *
-     * Most other providers require a bit more work than the Discord provider. For example, the
-     * GitHub provider requires you to add the `refresh_token_expires_in` field to the Account
-     * model. Refer to the NextAuth.js docs for the provider you want to use. Example:
-     *
-     * @see https://next-auth.js.org/providers/github
-     */
-  ],
-  adapter: PrismaAdapter(db),
-  callbacks: {
-    session: ({ session, user }) => ({
-      ...session,
-      user: {
-        ...session.user,
-        id: user.id,
+    Credentials({
+      name: "Credentials",
+      credentials: {
+        email: {},
+        password: {},
+      },
+      authorize: async (credentials, req) => {
+        const result = credentialsSchema.safeParse(credentials);
+
+        if (!result.success) {
+          console.log("credentialsSchema result", result);
+          return null;
+        }
+
+        const { email, password } = result.data;
+
+        const user = await db.user.findUnique({
+          where: { email },
+        });
+
+        if (user?.password) {
+          const isValid: boolean = await bcrypt.compare(
+            password,
+            user.password,
+          );
+          if (isValid) {
+            const { password, ...userWithoutPassword } = user;
+            return userWithoutPassword;
+          }
+        }
+
+        return null;
       },
     }),
+  ],
+  adapter: PrismaAdapter(db),
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60,
   },
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) token.id = user.id;
+      return token;
+    },
+    async session({ session, token }) {
+      if (token && session.user) session.user.id = token.id as string;
+      return session;
+    },
+  },
+  pages: {
+    signIn: "/login", // or your custom login route
+    signOut: "/", // optional
+    error: "/error", // redirect here on errors
+  },
+  // callbacks: {
+  //   session: async ({ session, user }) => {
+  //     return {
+  //       ...session,
+  //       user: {
+  //         ...session.user,
+  //         id: user.id,
+  //       },
+  //     };
+  //   },
+  // },
+  debug: true,
 } satisfies NextAuthConfig;
