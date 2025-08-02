@@ -34,6 +34,12 @@ model Account {
     @@unique([provider, providerAccountId])
 }
 
+enum Role {
+  INTERN
+  ORGANIZATION
+  ADMIN
+}
+
 model Session {
     id           String   @id @default(cuid())
     sessionToken String   @unique
@@ -49,6 +55,7 @@ model User {
     emailVerified DateTime?
     image         String?
     password      String?  
+    role          Role      @default(INTERN)
     accounts      Account[]
     sessions      Session[]
 }

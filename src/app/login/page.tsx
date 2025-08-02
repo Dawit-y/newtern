@@ -19,7 +19,7 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<LoginInputs>();
 
   const onSubmit: SubmitHandler<LoginInputs> = async ({ email, password }) => {
@@ -30,7 +30,7 @@ export default function LoginPage() {
       redirect: false, // so we can manually handle redirect
     });
 
-    console.log("res", res)
+    console.log("res", res);
 
     if (res?.ok) {
       router.push("/");
@@ -79,7 +79,7 @@ export default function LoginPage() {
                 })}
                 type="email"
                 autoComplete="email"
-                className="relative block w-full appearance-none rounded-none rounded-t-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm mb-4"
+                className="relative mb-4 block w-full appearance-none rounded-none rounded-t-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm"
                 placeholder="Email address"
               />
               {errors.email && (
@@ -142,10 +142,10 @@ export default function LoginPage() {
           <div>
             <button
               type="submit"
-              disabled={Object.keys(errors).length > 0}
+              disabled={Object.keys(errors).length > 0 || isSubmitting}
               className="group relative flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Sign in
+              {isSubmitting ? "Loggin in...." : "Log in"}
             </button>
           </div>
         </form>

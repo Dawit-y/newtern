@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 type Inputs = {
   email: string;
   password: string;
+  role: "INTERN" | "ORGANIZATION" | "ADMIN";
 };
 
 export default function Register() {
@@ -42,6 +43,25 @@ export default function Register() {
         <h2 className="text-center text-2xl font-bold text-gray-800">
           Register
         </h2>
+
+        <div className="flex flex-col">
+          <label htmlFor="email" className="mb-1 text-sm text-gray-700">
+            Role
+          </label>
+          <select
+            id="role"
+            {...register("role", { required: true })}
+            className="rounded-md border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          >
+            <option value="">Select Role</option>
+            <option value="INTERN">Intern</option>
+            <option value="ORGANIZATION">Org</option>
+            <option value="ADMIN">Admin</option>
+          </select>
+          {errors.role && (
+            <span className="mt-1 text-sm text-red-500">Role is required</span>
+          )}
+        </div>
 
         {/* Email Field */}
         <div className="flex flex-col">

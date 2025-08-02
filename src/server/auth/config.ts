@@ -23,15 +23,15 @@ declare module "next-auth" {
   interface Session extends DefaultSession {
     user: {
       id: string;
+      role: string;
       // ...other properties
-      // role: UserRole;
     } & DefaultSession["user"];
   }
 
-  // interface User {
-  //   // ...other properties
-  //   // role: UserRole;
-  // }
+  interface User {
+    role: string;
+    // ...other properties
+  }
 }
 
 /**
@@ -60,6 +60,15 @@ export const authConfig = {
 
         const user = await db.user.findUnique({
           where: { email },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            emailVerified: true,
+            image: true,
+            password: true,
+            role: true,
+          },
         });
 
         if (user?.password) {
@@ -77,18 +86,24 @@ export const authConfig = {
       },
     }),
   ],
-  adapter: PrismaAdapter(db),
+  // adapter: PrismaAdapter(db),
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60,
   },
   callbacks: {
     async jwt({ token, user }) {
-      if (user) token.id = user.id;
+      if (user) {
+        token.id = user.id;
+        token.role = user.role;
+      }
       return token;
     },
     async session({ session, token }) {
-      if (token && session.user) session.user.id = token.id as string;
+      if (token && session.user) {
+        session.user.id = token.id as string;
+        session.user.role = token.role as string;
+      }
       return session;
     },
   },
