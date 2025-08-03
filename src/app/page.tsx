@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { HydrateClient } from "@/trpc/server";
 import { auth } from "@/server/auth";
-import { SignOutButton } from "./_components/logout";
+import { SignOutButton } from "../components/logout";
 
 export default async function Home() {
   const session = await auth();
