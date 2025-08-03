@@ -6,11 +6,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 
-interface LoginInputs {
+
+type LoginInputs = {
   email: string;
   password: string;
   remember: boolean;
-}
+};
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,10 +33,11 @@ export default function LoginPage() {
 
     console.log("res", res);
 
-    if (res?.ok) {
-      router.push("/");
+    if (res?.error) {
+      alert("Login failed. Please check your credentials.");
     } else {
-      setError("Invalid email or password.");
+      // Redirect to home page on successful login
+      router.push("/");
     }
   };
 

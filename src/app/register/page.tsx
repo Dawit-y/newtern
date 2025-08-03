@@ -3,12 +3,10 @@
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { api } from "@/trpc/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { type RouterInputs } from "@/trpc/react";
 
-type Inputs = {
-  email: string;
-  password: string;
-  role: "INTERN" | "ORGANIZATION" | "ADMIN";
-};
+type Inputs = RouterInputs["auth"]["register"];
 
 export default function Register() {
   const router = useRouter();
@@ -99,6 +97,10 @@ export default function Register() {
 
         {/* Error Message */}
         {error && <p className="text-sm text-red-500">{error.message}</p>}
+
+        <small>
+          If You have an account <Link href={"/login"}>Login</Link>
+        </small>
 
         {/* Submit Button */}
         <button

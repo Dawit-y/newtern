@@ -5,7 +5,6 @@ import { SignOutButton } from "./_components/logout";
 
 export default async function Home() {
   const session = await auth();
-  console.log(session);
   return (
     <HydrateClient>
       <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
@@ -21,6 +20,11 @@ export default async function Home() {
               <>
                 <h1>Welcome, {session.user.email}</h1>
                 <p>Role: {session.user.role}</p>
+                <h1>
+                  {" "}
+                  <Link href={"/dashboard"}>Dashboard</Link>
+                </h1>
+
                 <SignOutButton />
               </>
             ) : (
