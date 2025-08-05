@@ -1,6 +1,7 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
+import { type Adapter } from "next-auth/adapters";
 import { type DefaultSession, type NextAuthConfig } from "next-auth";
-import DiscordProvider from "next-auth/providers/discord";
+import GoogleProvider from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
 
@@ -41,14 +42,17 @@ declare module "next-auth" {
  */
 export const authConfig = {
   providers: [
-    DiscordProvider,
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
     Credentials({
       name: "Credentials",
       credentials: {
         email: {},
         password: {},
       },
-      authorize: async (credentials, req) => {
+      authorize: async (credentials) => {
         const result = credentialsSchema.safeParse(credentials);
 
         if (!result.success) {
@@ -86,7 +90,7 @@ export const authConfig = {
       },
     }),
   ],
-  // adapter: PrismaAdapter(db),
+  adapter: PrismaAdapter(db) as Adapter,
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60,
@@ -105,6 +109,22 @@ export const authConfig = {
         session.user.role = token.role as string;
       }
       return session;
+    },
+    async signIn({ user, account }) {
+      if (account?.provider === "google") {
+        const existingUser = await db.user.findUnique({
+          where: { email: user.email ?? "" },
+        });
+
+        if (existingUser?.password) {
+          // User registered via credentials, block Google login
+          throw new Error(
+            "Email already registered with credentials. Please log in with email and password.",
+          );
+        }
+      }
+
+      return true; // allow login
     },
   },
   pages: {
