@@ -134,7 +134,7 @@ export default function OrganizationSignupForm() {
         <div className="space-y-2">
           <Label htmlFor="industry">Industry</Label>
           <Select>
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Select industry" />
             </SelectTrigger>
             <SelectContent>
@@ -152,7 +152,7 @@ export default function OrganizationSignupForm() {
         <div className="space-y-2">
           <Label htmlFor="companySize">Company Size</Label>
           <Select>
-            <SelectTrigger>
+            <SelectTrigger className="w-full" >
               <SelectValue placeholder="Select size" />
             </SelectTrigger>
             <SelectContent>

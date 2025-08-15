@@ -25,7 +25,7 @@ import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col overflow-x-hidden">
       {/* Header */}
       <header className="flex h-16 items-center border-b px-4 lg:px-6">
         <Link href="/" className="flex items-center justify-center">
@@ -70,10 +70,10 @@ export default function HomePage() {
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="from-primary/5 via-background to-secondary/5 w-full bg-gradient-to-br py-12 md:py-24 lg:py-32 xl:py-48">
+        <section className="from-primary/5 via-background to-secondary/5 w-full bg-gradient-to-br py-12">
           <div className="container px-4 md:px-6">
             <div className="grid gap-6 lg:grid-cols-[1fr_500px] lg:gap-12 xl:grid-cols-[1fr_600px]">
-              <div className="flex flex-col justify-center space-y-4">
+              <div className="flex flex-col justify-start space-y-4">
                 <div className="space-y-2">
                   <Badge variant="secondary" className="w-fit">
                     Virtual Internship Platform
@@ -257,9 +257,11 @@ export default function HomePage() {
                   </li>
                 </ul>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                  <Button size="lg">
-                    Start Your Journey
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                  <Button asChild size="lg">
+                    <Link href="/auth/signup">
+                      <span>Start Your Journey</span>
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
                   </Button>
                   <Button variant="outline" size="lg">
                     View Sample Tasks

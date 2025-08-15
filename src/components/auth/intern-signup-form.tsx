@@ -123,7 +123,7 @@ export default function InternSignupForm() {
         <div className="space-y-2">
           <Label htmlFor="graduationYear">Expected Graduation</Label>
           <Select>
-            <SelectTrigger>
+            <SelectTrigger className="w-full" >
               <SelectValue placeholder="Select year" />
             </SelectTrigger>
             <SelectContent>
@@ -138,7 +138,7 @@ export default function InternSignupForm() {
         <div className="space-y-2">
           <Label htmlFor="experienceLevel">Experience Level</Label>
           <Select>
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Select level" />
             </SelectTrigger>
             <SelectContent>
