@@ -1,45 +1,93 @@
 "use client";
 
 import { useState } from "react";
+import { useForm, type SubmitHandler } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { type z } from "zod";
+import { api } from "@/trpc/react";
+import { internSchema } from "@/lib/validation/auth";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+
+type InternFormValues = z.infer<typeof internSchema>;
 
 export default function InternSignupForm() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setIsLoading(false);
-    console.log("Intern signup submitted");
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<InternFormValues>({
+    resolver: zodResolver<InternFormValues>(internSchema),
+    defaultValues: {
+      role: "INTERN",
+      firstName: "",
+      lastName: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      university: "",
+      major: "",
+      skills: "",
+      bio: "",
+    },
+  });
+
+  const registerMutation = api.auth.register.useMutation({
+    onSuccess: () => {
+      toast.success("Intern account created successfully!");
+      router.push("/dashboard");
+    },
+    onError: (err) => {
+      toast.error(err.message || "Something went wrong");
+    },
+  });
+
+  const onSubmit: SubmitHandler<InternFormValues> = async (data) => {
+    if (data.password !== data.confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    await registerMutation.mutateAsync(data);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
+      <input type="hidden" {...register("role")} value="INTERN" />
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="firstName">First Name</Label>
-          <Input id="firstName" placeholder="Enter your first name" required />
+          <Input
+            id="firstName"
+            placeholder="Enter your first name"
+            {...register("firstName")}
+          />
+          {errors.firstName && (
+            <p className="text-sm text-red-500">{errors.firstName.message}</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="lastName">Last Name</Label>
-          <Input id="lastName" placeholder="Enter your last name" required />
+          <Input
+            id="lastName"
+            placeholder="Enter your last name"
+            {...register("lastName")}
+          />
+          {errors.lastName && (
+            <p className="text-sm text-red-500">{errors.lastName.message}</p>
+          )}
         </div>
       </div>
 
@@ -49,8 +97,11 @@ export default function InternSignupForm() {
           id="email"
           type="email"
           placeholder="Enter your email address"
-          required
+          {...register("email")}
         />
+        {errors.email && (
+          <p className="text-sm text-red-500">{errors.email.message}</p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -61,7 +112,7 @@ export default function InternSignupForm() {
               id="password"
               type={showPassword ? "text" : "password"}
               placeholder="Create a password"
-              required
+              {...register("password")}
             />
             <Button
               type="button"
@@ -77,6 +128,9 @@ export default function InternSignupForm() {
               )}
             </Button>
           </div>
+          {errors.password && (
+            <p className="text-sm text-red-500">{errors.password.message}</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="confirmPassword">Confirm Password</Label>
@@ -85,7 +139,7 @@ export default function InternSignupForm() {
               id="confirmPassword"
               type={showConfirmPassword ? "text" : "password"}
               placeholder="Confirm your password"
-              required
+              {...register("confirmPassword")}
             />
             <Button
               type="button"
@@ -101,6 +155,11 @@ export default function InternSignupForm() {
               )}
             </Button>
           </div>
+          {errors.confirmPassword && (
+            <p className="text-sm text-red-500">
+              {errors.confirmPassword.message}
+            </p>
+          )}
         </div>
       </div>
 
@@ -110,43 +169,22 @@ export default function InternSignupForm() {
           <Input
             id="university"
             placeholder="Enter your institution"
-            required
+            {...register("university")}
           />
+          {errors.university && (
+            <p className="text-sm text-red-500">{errors.university.message}</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="major">Field of Study</Label>
-          <Input id="major" placeholder="e.g., Computer Science" required />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="graduationYear">Expected Graduation</Label>
-          <Select>
-            <SelectTrigger className="w-full" >
-              <SelectValue placeholder="Select year" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="2024">2024</SelectItem>
-              <SelectItem value="2025">2025</SelectItem>
-              <SelectItem value="2026">2026</SelectItem>
-              <SelectItem value="2027">2027</SelectItem>
-              <SelectItem value="2028">2028</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="experienceLevel">Experience Level</Label>
-          <Select>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select level" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="beginner">Beginner</SelectItem>
-              <SelectItem value="intermediate">Intermediate</SelectItem>
-              <SelectItem value="advanced">Advanced</SelectItem>
-            </SelectContent>
-          </Select>
+          <Input
+            id="major"
+            placeholder="e.g., Computer Science"
+            {...register("major")}
+          />
+          {errors.major && (
+            <p className="text-sm text-red-500">{errors.major.message}</p>
+          )}
         </div>
       </div>
 
@@ -156,7 +194,11 @@ export default function InternSignupForm() {
           id="skills"
           placeholder="List your skills, programming languages, areas of interest..."
           className="min-h-[80px]"
+          {...register("skills")}
         />
+        {errors.skills && (
+          <p className="text-sm text-red-500">{errors.skills.message}</p>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -165,7 +207,11 @@ export default function InternSignupForm() {
           id="bio"
           placeholder="Tell us about yourself, your goals, and what you're looking for in an internship..."
           className="min-h-[100px]"
+          {...register("bio")}
         />
+        {errors.bio && (
+          <p className="text-sm text-red-500">{errors.bio.message}</p>
+        )}
       </div>
 
       <div className="flex items-center space-x-2">
@@ -189,9 +235,9 @@ export default function InternSignupForm() {
       <Button
         type="submit"
         className="w-full"
-        disabled={isLoading || !agreedToTerms}
+        disabled={isSubmitting || !agreedToTerms}
       >
-        {isLoading ? "Creating Account..." : "Create Intern Account"}
+        {isSubmitting ? "Creating Account..." : "Create Intern Account"}
       </Button>
     </form>
   );

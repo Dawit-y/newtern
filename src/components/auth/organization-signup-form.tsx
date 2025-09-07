@@ -1,6 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useForm, type SubmitHandler } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { type z } from "zod";
+import { api } from "@/trpc/react";
+import { organizationSchema } from "@/lib/validation/auth";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,80 +20,123 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+
+type OrgFormValues = z.infer<typeof organizationSchema>;
 
 export default function OrganizationSignupForm() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    control,
+    setValue,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<OrgFormValues>({
+    resolver: zodResolver<OrgFormValues>(organizationSchema),
+    defaultValues: {
+      role: "ORGANIZATION",
+      organizationName: "",
+      contactFirstName: "",
+      contactLastName: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      jobTitle: "",
+      industry: undefined,
+      companySize: undefined,
+      website: "",
+      location: "",
+      description: "",
+      internshipGoals: "",
+    },
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    setIsLoading(false);
-    console.log("Organization signup submitted");
+  const registerMutation = api.auth.register.useMutation({
+    onSuccess: () => {
+      toast.success("Organization account created successfully!");
+      router.push("/dashboard");
+    },
+    onError: (err) => {
+      toast.error(err.message || "Something went wrong");
+    },
+  });
+
+  const onSubmit: SubmitHandler<OrgFormValues> = async (data) => {
+    if (data.password !== data.confirmPassword) {
+      console.log("password", data.password);
+      console.log("confirmPassword", data.confirmPassword);
+      toast.error("Passwords do not match");
+      return;
+    }
+    await registerMutation.mutateAsync(data);
   };
 
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+
   return (
-    <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
+      <input type="hidden" {...register("role")} value="ORGANIZATION" />
+
       <div className="space-y-2">
         <Label htmlFor="organizationName">Organization Name</Label>
-        <Input
-          id="organizationName"
-          placeholder="Enter your organization name"
-          required
-        />
+        <Input id="organizationName" {...register("organizationName")} />
+        {errors.organizationName && (
+          <p className="text-sm text-red-500">
+            {errors.organizationName.message}
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="contactFirstName">Contact First Name</Label>
-          <Input
-            id="contactFirstName"
-            placeholder="Enter contact first name"
-            required
-          />
+          <Input id="contactFirstName" {...register("contactFirstName")} />
+          {errors.contactFirstName && (
+            <p className="text-sm text-red-500">
+              {errors.contactFirstName.message}
+            </p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="contactLastName">Contact Last Name</Label>
-          <Input
-            id="contactLastName"
-            placeholder="Enter contact last name"
-            required
-          />
+          <Input id="contactLastName" {...register("contactLastName")} />
+          {errors.contactLastName && (
+            <p className="text-sm text-red-500">
+              {errors.contactLastName.message}
+            </p>
+          )}
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="workEmail">Work Email Address</Label>
-        <Input
-          id="workEmail"
-          type="email"
-          placeholder="Enter your work email address"
-          required
-        />
+        <Label htmlFor="email">Work Email Address</Label>
+        <Input id="email" type="email" {...register("email")} />
+        {errors.email && (
+          <p className="text-sm text-red-500">{errors.email.message}</p>
+        )}
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="jobTitle">Job Title</Label>
-        <Input
-          id="jobTitle"
-          placeholder="e.g., HR Manager, CTO, Founder"
-          required
-        />
+        <Input id="jobTitle" {...register("jobTitle")} />
+        {errors.jobTitle && (
+          <p className="text-sm text-red-500">{errors.jobTitle.message}</p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="orgPassword">Password</Label>
+          <Label htmlFor="password">Password</Label>
           <div className="relative">
             <Input
-              id="orgPassword"
+              id="password"
               type={showPassword ? "text" : "password"}
-              placeholder="Create a password"
-              required
+              {...register("password")}
             />
             <Button
               type="button"
@@ -103,15 +152,18 @@ export default function OrganizationSignupForm() {
               )}
             </Button>
           </div>
+          {errors.password && (
+            <p className="text-sm text-red-500">{errors.password.message}</p>
+          )}
         </div>
+
         <div className="space-y-2">
-          <Label htmlFor="orgConfirmPassword">Confirm Password</Label>
+          <Label htmlFor="confirmPassword">Confirm Password</Label>
           <div className="relative">
             <Input
-              id="orgConfirmPassword"
+              id="confirmPassword"
               type={showConfirmPassword ? "text" : "password"}
-              placeholder="Confirm your password"
-              required
+              {...register("confirmPassword")}
             />
             <Button
               type="button"
@@ -132,8 +184,8 @@ export default function OrganizationSignupForm() {
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="industry">Industry</Label>
-          <Select>
+          <Label>Industry</Label>
+          <Select onValueChange={(val) => setValue("industry", val)}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select industry" />
             </SelectTrigger>
@@ -149,10 +201,11 @@ export default function OrganizationSignupForm() {
             </SelectContent>
           </Select>
         </div>
+
         <div className="space-y-2">
-          <Label htmlFor="companySize">Company Size</Label>
-          <Select>
-            <SelectTrigger className="w-full" >
+          <Label>Company Size</Label>
+          <Select onValueChange={(val) => setValue("companySize", val)}>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Select size" />
             </SelectTrigger>
             <SelectContent>
@@ -168,48 +221,48 @@ export default function OrganizationSignupForm() {
 
       <div className="space-y-2">
         <Label htmlFor="website">Company Website</Label>
-        <Input
-          id="website"
-          type="url"
-          placeholder="https://www.yourcompany.com"
-        />
+        <Input id="website" type="url" {...register("website")} />
+        {errors.website && (
+          <p className="text-sm text-red-500">{errors.website.message}</p>
+        )}
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="location">Location</Label>
-        <Input
-          id="location"
-          placeholder="e.g., San Francisco, CA or Remote"
-          required
-        />
+        <Input id="location" {...register("location")} />
+        {errors.location && (
+          <p className="text-sm text-red-500">{errors.location.message}</p>
+        )}
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="description">Company Description</Label>
         <Textarea
           id="description"
-          placeholder="Briefly describe your company, mission, and what makes it a great place for interns..."
+          {...register("description")}
           className="min-h-[100px]"
-          required
         />
+        {errors.description && (
+          <p className="text-sm text-red-500">{errors.description.message}</p>
+        )}
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="internshipGoals">Internship Program Goals</Label>
         <Textarea
           id="internshipGoals"
-          placeholder="What do you hope to achieve with your internship program? What kind of projects will interns work on?"
+          {...register("internshipGoals")}
           className="min-h-[80px]"
         />
       </div>
 
       <div className="flex items-center space-x-2">
         <Checkbox
-          id="orgTerms"
+          id="terms"
           checked={agreedToTerms}
           onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
         />
-        <Label htmlFor="orgTerms" className="text-sm">
+        <Label htmlFor="terms" className="text-sm">
           I agree to the{" "}
           <a href="/terms" className="text-primary hover:underline">
             Terms of Service
@@ -224,9 +277,9 @@ export default function OrganizationSignupForm() {
       <Button
         type="submit"
         className="w-full"
-        disabled={isLoading || !agreedToTerms}
+        disabled={isSubmitting || !agreedToTerms}
       >
-        {isLoading ? "Creating Account..." : "Create Organization Account"}
+        {isSubmitting ? "Creating Account..." : "Create Organization Account"}
       </Button>
     </form>
   );

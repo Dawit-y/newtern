@@ -15,21 +15,78 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Briefcase, Users, Building2, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
+import { useForm, type SubmitHandler } from "react-hook-form";
+import { signIn } from "next-auth/react";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+
+type SignInFormValues = {
+  email: string;
+  password: string;
+  role: "INTERN" | "ORGANIZATION";
+};
 
 export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<"intern" | "organization">(
+    "intern",
+  );
+  const router = useRouter();
 
-  const handleSubmit = async (
-    e: React.FormEvent,
-    userType: "intern" | "organization",
-  ) => {
-    e.preventDefault();
-    setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsLoading(false);
-    console.log(`Signing in as ${userType}`);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    reset,
+    setValue,
+    clearErrors,
+  } = useForm<SignInFormValues>({
+    mode: "onBlur",
+    defaultValues: {
+      role: "INTERN",
+    },
+  });
+
+  const handleTabChange = (value: string) => {
+    if (value === "intern" || value === "organization") {
+      setActiveTab(value);
+      setValue("role", value === "intern" ? "INTERN" : "ORGANIZATION");
+      // Clear all errors when switching tabs
+      clearErrors();
+    }
+  };
+
+  const onSubmit: SubmitHandler<SignInFormValues> = async (data) => {
+    console.log("Submitted data:", data);
+
+    try {
+      const result = await signIn("credentials", {
+        email: data.email,
+        password: data.password,
+        role: data.role,
+        redirect: false,
+        callbackUrl: "/dashboard",
+      });
+      console.log("SignIn result:", result);
+
+      if (!result?.error) {
+        toast.success("Successfully signed in!");
+        reset();
+        router.push("/dashboard");
+      } else if (result?.error) {
+        console.error("SignIn error:", result.error);
+        toast.error(result.error);
+      } else {
+        toast.error("An unexpected error occurred. Please try again.");
+      }
+    } catch (err: unknown) {
+      console.error("SignIn exception:", err);
+      if (err instanceof Error) {
+        toast.error(err.message);
+      } else {
+        toast.error("An unknown error occurred.");
+      }
+    }
   };
 
   return (
@@ -50,7 +107,11 @@ export default function SignInPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="intern" className="w-full">
+            <Tabs
+              defaultValue="intern"
+              onValueChange={handleTabChange}
+              className="w-full"
+            >
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="intern" className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
@@ -65,19 +126,29 @@ export default function SignInPage() {
                 </TabsTrigger>
               </TabsList>
 
+              {/* Intern Form */}
               <TabsContent value="intern">
-                <form
-                  onSubmit={(e) => handleSubmit(e, "intern")}
-                  className="space-y-4"
-                >
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                  <input type="hidden" {...register("role")} value="INTERN" />
                   <div className="space-y-2">
                     <Label htmlFor="intern-email">Email</Label>
                     <Input
                       id="intern-email"
                       type="email"
                       placeholder="Enter your email"
-                      required
+                      {...register("email", {
+                        required: "Email is required",
+                        pattern: {
+                          value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                          message: "Invalid email address",
+                        },
+                      })}
                     />
+                    {errors.email && (
+                      <p className="text-sm text-red-500">
+                        {errors.email.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="intern-password">Password</Label>
@@ -86,14 +157,20 @@ export default function SignInPage() {
                         id="intern-password"
                         type={showPassword ? "text" : "password"}
                         placeholder="Enter your password"
-                        required
+                        {...register("password", {
+                          required: "Password is required",
+                          minLength: {
+                            value: 6,
+                            message: "Password must be at least 6 characters",
+                          },
+                        })}
                       />
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
                         className="absolute top-0 right-0 h-full px-3 py-2 hover:bg-transparent"
-                        onClick={() => setShowPassword(!showPassword)}
+                        onClick={() => setShowPassword((prev) => !prev)}
                       >
                         {showPassword ? (
                           <EyeOff className="h-4 w-4" />
@@ -102,6 +179,11 @@ export default function SignInPage() {
                         )}
                       </Button>
                     </div>
+                    {errors.password && (
+                      <p className="text-sm text-red-500">
+                        {errors.password.message}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center justify-between">
                     <Link
@@ -111,25 +193,43 @@ export default function SignInPage() {
                       Forgot password?
                     </Link>
                   </div>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Signing in..." : "Sign in as Intern"}
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Signing in..." : "Sign in as Intern"}
                   </Button>
                 </form>
               </TabsContent>
 
+              {/* Organization Form */}
               <TabsContent value="organization">
-                <form
-                  onSubmit={(e) => handleSubmit(e, "organization")}
-                  className="space-y-4"
-                >
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                  <input
+                    type="hidden"
+                    {...register("role")}
+                    value="ORGANIZATION"
+                  />
                   <div className="space-y-2">
                     <Label htmlFor="org-email">Organization Email</Label>
                     <Input
                       id="org-email"
                       type="email"
                       placeholder="Enter your organization email"
-                      required
+                      {...register("email", {
+                        required: "Organization email is required",
+                        pattern: {
+                          value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                          message: "Invalid email address",
+                        },
+                      })}
                     />
+                    {errors.email && (
+                      <p className="text-sm text-red-500">
+                        {errors.email.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="org-password">Password</Label>
@@ -138,14 +238,20 @@ export default function SignInPage() {
                         id="org-password"
                         type={showPassword ? "text" : "password"}
                         placeholder="Enter your password"
-                        required
+                        {...register("password", {
+                          required: "Password is required",
+                          minLength: {
+                            value: 6,
+                            message: "Password must be at least 6 characters",
+                          },
+                        })}
                       />
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
                         className="absolute top-0 right-0 h-full px-3 py-2 hover:bg-transparent"
-                        onClick={() => setShowPassword(!showPassword)}
+                        onClick={() => setShowPassword((prev) => !prev)}
                       >
                         {showPassword ? (
                           <EyeOff className="h-4 w-4" />
@@ -154,6 +260,11 @@ export default function SignInPage() {
                         )}
                       </Button>
                     </div>
+                    {errors.password && (
+                      <p className="text-sm text-red-500">
+                        {errors.password.message}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center justify-between">
                     <Link
@@ -163,8 +274,12 @@ export default function SignInPage() {
                       Forgot password?
                     </Link>
                   </div>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Signing in..." : "Sign in as Organization"}
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Signing in..." : "Sign in as Organization"}
                   </Button>
                 </form>
               </TabsContent>

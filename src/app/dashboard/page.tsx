@@ -6,6 +6,7 @@ import AdminDashboard from "@/components/dashboards/admin-dashboard";
 
 export default async function DashbaordPage() {
   const session = await auth();
+  console.log("Session data:", session);
   return (
     <div>
       {session?.user.role === "INTERN" && <InternDashboard />}
