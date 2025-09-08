@@ -16,7 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { Briefcase, Users, Building2, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useForm, type SubmitHandler } from "react-hook-form";
-import { signIn } from "next-auth/react";
+import { signIn } from "@/lib/auth-client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -27,17 +27,15 @@ type SignInFormValues = {
 };
 
 export default function SignInPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState<"intern" | "organization">(
     "intern",
   );
-  const router = useRouter();
-
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    reset,
     setValue,
     clearErrors,
   } = useForm<SignInFormValues>({
@@ -60,24 +58,14 @@ export default function SignInPage() {
     console.log("Submitted data:", data);
 
     try {
-      const result = await signIn("credentials", {
+      const result = await signIn.email({
         email: data.email,
         password: data.password,
-        role: data.role,
-        redirect: false,
-        callbackUrl: "/dashboard",
       });
       console.log("SignIn result:", result);
-
-      if (!result?.error) {
-        toast.success("Successfully signed in!");
-        reset();
+      if (result.data?.token) {
+        toast.success("Signed in successfully!");
         router.push("/dashboard");
-      } else if (result?.error) {
-        console.error("SignIn error:", result.error);
-        toast.error(result.error);
-      } else {
-        toast.error("An unexpected error occurred. Please try again.");
       }
     } catch (err: unknown) {
       console.error("SignIn exception:", err);

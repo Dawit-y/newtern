@@ -1,38 +1,47 @@
 import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import bcrypt from "bcrypt";
 import { registerSchema } from "@/lib/validation/auth";
+import { auth } from "@/lib/auth";
 
 export const authRouter = createTRPCRouter({
   register: publicProcedure
     .input(registerSchema)
     .mutation(async ({ input, ctx }) => {
       const { email, password, role } = input;
+      let name: string;
+      if (role === "INTERN") {
+        name = `${input.firstName} ${input.lastName}`;
+      } else {
+        name = `${input.contactFirstName} ${input.contactLastName}`;
+      }
 
-      // check if user exists
-      const existingUser = await ctx.db.user.findUnique({ where: { email } });
-      if (existingUser) {
+      const result = await auth.api.signUpEmail({
+        body: {
+          name,
+          email,
+          password,
+        },
+      });
+      console.log("BetterAuth signUpEmail result:", result);
+      if (!result?.user) {
         throw new TRPCError({
-          code: "CONFLICT",
-          message: "Email already in use",
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to register user with BetterAuth",
         });
       }
 
-      // hash password
-      const hashedPassword = await bcrypt.hash(password, 10);
+      const userId = result.user.id;
 
-      // create base user
-      const user = await ctx.db.user.create({
+      const user = await ctx.db.user.update({
+        where: { id: userId },
         data: {
-          email,
-          password: hashedPassword,
+          name,
           role,
         },
       });
 
-      // role-specific profile creation
       if (role === "INTERN") {
-        const intern = await ctx.db.internProfile.create({
+        await ctx.db.internProfile.create({
           data: {
             userId: user.id,
             firstName: input.firstName,
@@ -44,7 +53,7 @@ export const authRouter = createTRPCRouter({
           },
         });
       } else if (role === "ORGANIZATION") {
-        const org = await ctx.db.organizationProfile.create({
+        await ctx.db.organizationProfile.create({
           data: {
             userId: user.id,
             organizationName: input.organizationName,
@@ -61,6 +70,6 @@ export const authRouter = createTRPCRouter({
         });
       }
 
-      return { id: user.id, email: user.email, role: user.role };
+      return user
     }),
 });

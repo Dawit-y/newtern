@@ -5,7 +5,6 @@ import { Geist } from "next/font/google";
 
 import { TRPCReactProvider } from "@/trpc/react";
 import { Toaster } from "@/components/ui/sonner";
-import { SessionProvider } from "next-auth/react";
 
 export const metadata: Metadata = {
   title: "Newtern",
@@ -24,9 +23,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geist.variable}`}>
       <body>
-        <SessionProvider>
-          <TRPCReactProvider>{children}</TRPCReactProvider>
-        </SessionProvider>
+        <TRPCReactProvider>{children}</TRPCReactProvider>
         <Toaster richColors closeButton />
       </body>
     </html>
