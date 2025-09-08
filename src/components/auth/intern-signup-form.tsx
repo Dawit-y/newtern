@@ -3,9 +3,8 @@
 import { useState } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { type z } from "zod";
 import { api } from "@/trpc/react";
-import { internSchema } from "@/lib/validation/auth";
+import { internSchema, type InternFormValues } from "@/lib/validation/auth";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,8 +14,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-
-type InternFormValues = z.infer<typeof internSchema>;
 
 export default function InternSignupForm() {
   const router = useRouter();
@@ -29,7 +26,7 @@ export default function InternSignupForm() {
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<InternFormValues>({
-    resolver: zodResolver<InternFormValues>(internSchema),
+    resolver: zodResolver(internSchema),
     defaultValues: {
       role: "INTERN",
       firstName: "",

@@ -64,7 +64,6 @@ export default function SignInPage() {
       });
       console.log("SignIn result:", result);
       if (result.data?.token) {
-        toast.success("Signed in successfully!");
         router.push("/dashboard");
       }
     } catch (err: unknown) {

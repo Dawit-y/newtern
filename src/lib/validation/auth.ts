@@ -35,3 +35,6 @@ export const organizationSchema = baseSchema.extend({
 
 // Combined
 export const registerSchema = z.union([internSchema, organizationSchema]);
+
+export type OrgFormValues = z.infer<typeof organizationSchema>;
+export type InternFormValues = z.infer<typeof internSchema>;

@@ -3,9 +3,8 @@
 import { useState } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { type z } from "zod";
 import { api } from "@/trpc/react";
-import { organizationSchema } from "@/lib/validation/auth";
+import { organizationSchema, type OrgFormValues } from "@/lib/validation/auth";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +22,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-type OrgFormValues = z.infer<typeof organizationSchema>;
+
 
 export default function OrganizationSignupForm() {
   const router = useRouter();
@@ -32,12 +31,10 @@ export default function OrganizationSignupForm() {
   const {
     register,
     handleSubmit,
-    control,
     setValue,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<OrgFormValues>({
-    resolver: zodResolver<OrgFormValues>(organizationSchema),
+    resolver: zodResolver(organizationSchema),
     defaultValues: {
       role: "ORGANIZATION",
       organizationName: "",
@@ -68,8 +65,6 @@ export default function OrganizationSignupForm() {
 
   const onSubmit: SubmitHandler<OrgFormValues> = async (data) => {
     if (data.password !== data.confirmPassword) {
-      console.log("password", data.password);
-      console.log("confirmPassword", data.confirmPassword);
       toast.error("Passwords do not match");
       return;
     }
@@ -136,6 +131,7 @@ export default function OrganizationSignupForm() {
             <Input
               id="password"
               type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
               {...register("password")}
             />
             <Button
@@ -163,6 +159,7 @@ export default function OrganizationSignupForm() {
             <Input
               id="confirmPassword"
               type={showConfirmPassword ? "text" : "password"}
+              autoComplete="new-password"
               {...register("confirmPassword")}
             />
             <Button
