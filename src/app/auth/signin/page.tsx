@@ -16,22 +16,58 @@ import { Separator } from "@/components/ui/separator";
 import { Briefcase, Users, Building2, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useForm, type SubmitHandler } from "react-hook-form";
-import { signIn } from "@/lib/auth-client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { signIn } from "@/lib/auth-client";
 
 type SignInFormValues = {
   email: string;
   password: string;
-  role: "INTERN" | "ORGANIZATION";
+  role: "INTERN" | "ORGANIZATION" | "ADMIN";
 };
+
+// Type definitions for better-auth response
+type UserRole = "INTERN" | "ORGANIZATION" | "ADMIN";
+
+interface AuthResponse {
+  data?: {
+    user?: {
+      role?: UserRole;
+      id?: string;
+      email?: string;
+      name?: string;
+    };
+  };
+  error?: {
+    message?: string;
+  };
+}
+
+// Type guard to check if response has user data
+function hasUserData(response: unknown): response is AuthResponse {
+  if (typeof response !== "object" || response === null) {
+    return false;
+  }
+
+  const responseObj = response as Record<string, unknown>;
+  return (
+    "data" in responseObj &&
+    typeof responseObj.data === "object" &&
+    responseObj.data !== null
+  );
+}
+
+// Helper function to safely get user role
+function getUserRole(response: AuthResponse): UserRole | undefined {
+  return response.data?.user?.role;
+}
+
+export const dynamic = "force-dynamic";
 
 export default function SignInPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [activeTab, setActiveTab] = useState<"intern" | "organization">(
-    "intern",
-  );
+
   const {
     register,
     handleSubmit,
@@ -47,32 +83,56 @@ export default function SignInPage() {
 
   const handleTabChange = (value: string) => {
     if (value === "intern" || value === "organization") {
-      setActiveTab(value);
       setValue("role", value === "intern" ? "INTERN" : "ORGANIZATION");
-      // Clear all errors when switching tabs
       clearErrors();
     }
   };
 
   const onSubmit: SubmitHandler<SignInFormValues> = async (data) => {
-    console.log("Submitted data:", data);
-
     try {
-      const result = await signIn.email({
+      await signIn.email({
         email: data.email,
         password: data.password,
+        fetchOptions: {
+          onSuccess: async (ctx) => {
+            if (!hasUserData(ctx)) {
+              toast.error("Invalid response from server");
+              return;
+            }
+
+            const role = getUserRole(ctx);
+            if (role === "ADMIN") {
+              router.push("/dashboard/admin");
+              return;
+            }
+            if (role !== data.role) {
+              const roleText = role?.toLowerCase() ?? "unknown";
+              toast.error(
+                `You are trying to sign in as a ${data.role.toLowerCase()}, but your account is registered as a ${roleText}. Please use the correct sign-in option.`,
+              );
+              return;
+            }
+
+            // Handle role-based routing
+            if (role === "INTERN") {
+              router.push("/dashboard/intern");
+            } else if (role === "ORGANIZATION") {
+              router.push("/dashboard/organization");
+            } else if (role === "ADMIN") {
+              router.push("/dashboard/admin");
+            }
+          },
+          onError: (ctx) => {
+            if (hasUserData(ctx) && ctx.error?.message) {
+              toast.error(ctx.error.message);
+            } else {
+              toast.error("Sign-in failed");
+            }
+          },
+        },
       });
-      console.log("SignIn result:", result);
-      if (result.data?.token) {
-        router.push("/dashboard");
-      }
-    } catch (err: unknown) {
-      console.error("SignIn exception:", err);
-      if (err instanceof Error) {
-        toast.error(err.message);
-      } else {
-        toast.error("An unknown error occurred.");
-      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Sign-in failed");
     }
   };
 

@@ -22,11 +22,10 @@ export const authRouter = createTRPCRouter({
           password,
         },
       });
-      console.log("BetterAuth signUpEmail result:", result);
       if (!result?.user) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to register user with BetterAuth",
+          message: "Failed to register user",
         });
       }
 
@@ -70,6 +69,6 @@ export const authRouter = createTRPCRouter({
         });
       }
 
-      return user
+      return user;
     }),
 });

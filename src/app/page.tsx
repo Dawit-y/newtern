@@ -22,52 +22,20 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import Header from "@/components/layout/header";
 
-export default function HomePage() {
+const navLinks = [
+  { href: "#features", label: "Features" },
+  { href: "#for-interns", label: "For Interns" },
+  { href: "#for-organizations", label: "For Organizations" },
+  { href: "#pricing", label: "Pricing" },
+];
+
+export default async function HomePage() {
   return (
     <div className="flex min-h-screen flex-col overflow-x-hidden">
       {/* Header */}
-      <header className="flex h-16 items-center border-b px-4 lg:px-6">
-        <Link href="/" className="flex items-center justify-center">
-          <Briefcase className="text-primary h-8 w-8" />
-          <span className="text-primary ml-2 text-2xl font-bold">Newtern</span>
-        </Link>
-        <nav className="ml-auto flex gap-4 sm:gap-6">
-          <Link
-            href="#features"
-            className="text-sm font-medium underline-offset-4 hover:underline"
-          >
-            Features
-          </Link>
-          <Link
-            href="#for-interns"
-            className="text-sm font-medium underline-offset-4 hover:underline"
-          >
-            For Interns
-          </Link>
-          <Link
-            href="#for-organizations"
-            className="text-sm font-medium underline-offset-4 hover:underline"
-          >
-            For Organizations
-          </Link>
-          <Link
-            href="#pricing"
-            className="text-sm font-medium underline-offset-4 hover:underline"
-          >
-            Pricing
-          </Link>
-        </nav>
-        <div className="ml-6 flex gap-2">
-          <Button asChild variant="ghost" size="sm">
-            <Link href="/auth/signin">Sign In</Link>
-          </Button>
-          <Button asChild size="sm">
-            <Link href={"/auth/signup"}>Get Started</Link>
-          </Button>
-        </div>
-      </header>
-
+      <Header links={navLinks} />
       <main className="flex-1">
         {/* Hero Section */}
         <section className="from-primary/5 via-background to-secondary/5 w-full bg-gradient-to-br py-12">

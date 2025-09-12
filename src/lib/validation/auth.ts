@@ -36,5 +36,11 @@ export const organizationSchema = baseSchema.extend({
 // Combined
 export const registerSchema = z.union([internSchema, organizationSchema]);
 
+export const signInSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+  role: z.enum(["INTERN", "ORGANIZATION", "ADMIN"]),
+});
+
 export type OrgFormValues = z.infer<typeof organizationSchema>;
 export type InternFormValues = z.infer<typeof internSchema>;
