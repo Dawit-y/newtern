@@ -70,7 +70,6 @@ model InternProfile {
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Example intern fields (from your future InternSignupForm)
   firstName  String
   lastName   String
   university String

@@ -1,19 +1,9 @@
-import "@/styles/globals.css";
-
 import { type Metadata } from "next";
 import { AppSidebar, type IconName } from "@/components/dashboards/app-sidebar";
 import {
   SidebarInset,
   SidebarProvider,
-  SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb";
 import Header from "@/components/dashboards/header";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
