@@ -30,7 +30,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
-import Header from "@/components/layout/header";
+import Header from "@/components/layout/nav-bar";
 
 // Mock data
 const internships = [

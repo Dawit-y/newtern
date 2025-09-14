@@ -22,7 +22,7 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { MoreHorizontal, LogOut, Settings, Home } from "lucide-react";
 import { signOut } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import * as Icons from "lucide-react";
 import type { LucideProps } from "lucide-react";
@@ -64,6 +64,7 @@ type SidebarData = {
 export function AppSidebar({ data }: { data: SidebarData }) {
   const router = useRouter();
   const HeaderIcon = Icons[data.header.icon];
+  const pathname = usePathname();
 
   return (
     <Sidebar>
@@ -95,13 +96,16 @@ export function AppSidebar({ data }: { data: SidebarData }) {
               <SidebarMenu>
                 {group.items.map((item, j) => (
                   <SidebarMenuItem key={j}>
-                    <SidebarMenuButton asChild isActive={item.isActive}>
-                      <a href={item.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={item.href === pathname}
+                    >
+                      <Link href={item.href}>
                         {React.createElement(Icons[item.icon], {
                           className: "size-4",
                         })}
                         <span>{item.label}</span>
-                      </a>
+                      </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}

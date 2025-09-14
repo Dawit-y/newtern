@@ -14,6 +14,7 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
+import Header from "@/components/dashboards/header";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -51,7 +52,6 @@ export default async function OrganizationLayout({
             label: "Overview",
             icon: "TrendingUp" as IconName,
             href: "/dashboard/organization",
-            isActive: true,
           },
           {
             label: "Internships",
@@ -67,6 +67,11 @@ export default async function OrganizationLayout({
             label: "Tasks",
             icon: "FileText" as IconName,
             href: "/dashboard/organization/tasks",
+          },
+          {
+            label: "Interns",
+            icon: "UserCheck" as IconName,
+            href: "/dashboard/organization/interns",
           },
         ],
       },
@@ -99,17 +104,7 @@ export default async function OrganizationLayout({
       <SidebarProvider>
         <AppSidebar data={organizationSidebarData} />
         <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Overview</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </header>
+          <Header />
           {children}
         </SidebarInset>
       </SidebarProvider>

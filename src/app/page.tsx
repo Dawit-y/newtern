@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import Header from "@/components/layout/header";
+import Header from "@/components/layout/nav-bar";
 
 const navLinks = [
   { href: "#features", label: "Features" },

@@ -23,7 +23,7 @@ interface HeaderProps {
   links?: NavLink[];
 }
 
-export default function Header({ links = [] }: HeaderProps) {
+export default function NavBar({ links = [] }: HeaderProps) {
   const { data: session, isPending } = useSession();
 
   // Show loading state while session is being fetched
