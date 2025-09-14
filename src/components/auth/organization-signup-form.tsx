@@ -21,8 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-
-
+import { signIn } from "@/lib/auth-client";
 
 export default function OrganizationSignupForm() {
   const router = useRouter();
@@ -54,9 +53,25 @@ export default function OrganizationSignupForm() {
   });
 
   const registerMutation = api.auth.register.useMutation({
-    onSuccess: () => {
+    onSuccess: async (user, variables) => {
+      await signIn.email({
+        email: user.email,
+        password: variables.password,
+      });
       toast.success("Organization account created successfully!");
-      router.push("/dashboard");
+      switch (user.role) {
+        case "INTERN":
+          router.push("/dashboard/intern");
+          break;
+        case "ORGANIZATION":
+          router.push("/dashboard/organization");
+          break;
+        case "ADMIN":
+          router.push("/dashboard/admin");
+          break;
+        default:
+          break;
+      }
     },
     onError: (err) => {
       toast.error(err.message || "Something went wrong");

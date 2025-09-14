@@ -47,10 +47,11 @@ function getExistingUser(
 
 export const auth = betterAuth({
   database: prismaAdapter(db, {
-    provider: "sqlite",
+    provider: "postgresql",
   }),
   emailAndPassword: {
     enabled: true,
+    autoSignIn: true,
   },
   user: {
     additionalFields: {

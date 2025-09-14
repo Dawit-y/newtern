@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgres"
+  url      = env("DATABASE_URL")
 }
 
 model Account {
@@ -49,7 +49,6 @@ model Session {
 model User {
   id            String   @id @default(cuid())
   email         String   @unique
-  password      String?
   role          Role     @default(INTERN)
   name          String?
   image         String?
@@ -97,12 +96,13 @@ model OrganizationProfile {
   location         String
   description      String
   internshipGoals  String?
+  internships      Internship[]
 
   @@map("organization_profile")
 }
 
 model Verification {
-  id         String   @id
+  id         String   @id @default(cuid())
   identifier String
   value      String
   expiresAt  DateTime
@@ -110,4 +110,80 @@ model Verification {
   updatedAt  DateTime @default(now()) @updatedAt
 
   @@map("verification")
+}
+
+enum InternshipType {
+  PAID
+  UNPAID
+  STIPEND
+}
+
+model Internship {
+  id           String         @id @default(cuid())
+  slug         String         @unique
+  title        String
+  description  String
+  duration     String
+  type         InternshipType
+  location     String
+  requirements String?
+  deadline     DateTime
+  skills       String[]
+  published    Boolean        @default(false)
+  approved     Boolean        @default(false)
+
+  organizationId String
+  organization   OrganizationProfile @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  tasks          Task[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("internships")
+}
+
+model Task {
+  id                     String  @id @default(cuid())
+  slug                   String  @unique
+  title                  String
+  overview               String
+  background             String?
+  videoUrl               String?
+  description            String
+  instructions           String
+  submissionInstructions String
+  submitAsFile           Boolean @default(false)
+  submitAsText           Boolean @default(false)
+  submitAsUrl            Boolean @default(false)
+
+  internshipId String
+  internship   Internship @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  resources    Resource[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("tasks")
+}
+
+enum ResourceType {
+  FILE
+  URL
+}
+
+model Resource {
+  id          String       @id @default(cuid())
+  name        String
+  url         String?
+  file        String?
+  description String?
+  type        ResourceType
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("resources")
 }
