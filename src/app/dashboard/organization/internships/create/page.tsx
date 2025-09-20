@@ -192,7 +192,7 @@ export default function CreateInternshipPage() {
                           setFormData({ ...formData, duration: value })
                         }
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder="Select duration" />
                         </SelectTrigger>
                         <SelectContent>
@@ -215,7 +215,7 @@ export default function CreateInternshipPage() {
                           setFormData({ ...formData, type: value })
                         }
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder="Select type" />
                         </SelectTrigger>
                         <SelectContent>
@@ -258,7 +258,7 @@ export default function CreateInternshipPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="requirements">Requirements</Label>
+                    <Label htmlFor="requirements">Requirements *</Label>
                     <Textarea
                       id="requirements"
                       placeholder="List the requirements, qualifications, and skills needed..."

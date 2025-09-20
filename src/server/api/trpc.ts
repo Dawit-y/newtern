@@ -21,6 +21,11 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
   };
 };
 
+export type Context = Awaited<ReturnType<typeof createTRPCContext>>;
+export type ProtectedContext = Omit<Context, "session"> & {
+  session: NonNullable<Context["session"]>;
+};
+
 /**
  * 2. INITIALIZATION
  */

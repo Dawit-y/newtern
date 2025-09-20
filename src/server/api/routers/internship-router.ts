@@ -7,21 +7,19 @@ import { internshipSchema } from "@/lib/validation/internships";
 import { z } from "zod";
 import { generateSlug } from "@/utils/common-methods";
 import { TRPCError } from "@trpc/server";
-import { getOrgProfileOrThrow } from "@/lib/helpers/org";
+import { getOrgProfileOrThrow } from "@/server/lib/helpers/org";
+import {
+  assertNotIntern,
+  assertOrgOwnsInternship,
+} from "@/server/lib/helpers/auth";
 
 export const internshipsRouter = createTRPCRouter({
   create: protectedProcedure
     .input(internshipSchema)
     .mutation(async ({ input, ctx }) => {
+      assertNotIntern(ctx);
+
       const slug = generateSlug(input.title);
-
-      if (ctx.session.user.role !== "ORGANIZATION") {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Only organizations can create internships",
-        });
-      }
-
       const orgProfile = await getOrgProfileOrThrow(
         ctx.db,
         ctx.session.user.id,
@@ -49,10 +47,7 @@ export const internshipsRouter = createTRPCRouter({
       return ctx.db.internship.findMany({
         skip: input?.skip,
         take: input?.take,
-        where: {
-          published: true,
-          approved: true,
-        },
+        where: { published: true, approved: true },
         orderBy: { createdAt: "desc" },
       });
     }),
@@ -97,8 +92,7 @@ export const internshipsRouter = createTRPCRouter({
         });
       }
 
-      // Interns can’t list all
-      return [];
+      return []; // interns cannot list all
     }),
 
   byId: publicProcedure
@@ -138,23 +132,10 @@ export const internshipsRouter = createTRPCRouter({
         });
       }
 
-      const { role, id } = ctx.session.user;
+      assertNotIntern(ctx);
 
-      if (role === "INTERN") {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Not authorized",
-        });
-      }
-
-      if (role === "ORGANIZATION") {
-        const orgProfile = await getOrgProfileOrThrow(ctx.db, id);
-        if (internship.organizationId !== orgProfile.id) {
-          throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "Not authorized",
-          });
-        }
+      if (ctx.session.user.role === "ORGANIZATION") {
+        await assertOrgOwnsInternship(ctx, internship);
       }
 
       return ctx.db.internship.update({
@@ -177,23 +158,10 @@ export const internshipsRouter = createTRPCRouter({
         });
       }
 
-      const { role, id } = ctx.session.user;
+      assertNotIntern(ctx);
 
-      if (role === "INTERN") {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Not authorized",
-        });
-      }
-
-      if (role === "ORGANIZATION") {
-        const orgProfile = await getOrgProfileOrThrow(ctx.db, id);
-        if (internship.organizationId !== orgProfile.id) {
-          throw new TRPCError({
-            code: "UNAUTHORIZED",
-            message: "Not authorized",
-          });
-        }
+      if (ctx.session.user.role === "ORGANIZATION") {
+        await assertOrgOwnsInternship(ctx, internship);
       }
 
       return ctx.db.internship.delete({
