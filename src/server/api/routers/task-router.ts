@@ -62,6 +62,25 @@ export const tasksRouter = createTRPCRouter({
       });
     }),
 
+  listByOrganizationId: protectedProcedure
+    .input(z.object({ organizationId: z.string().cuid() }))
+    .query(async ({ input, ctx }) => {
+      return ctx.db.task.findMany({
+        where: {
+          internship: {
+            organizationId: input.organizationId,
+          },
+        },
+        include: {
+          internship: true,
+          resources: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+    }),
+
   byId: publicProcedure
     .input(z.string().cuid())
     .query(async ({ input, ctx }) => {
@@ -79,7 +98,7 @@ export const tasksRouter = createTRPCRouter({
         include: { resources: true },
       });
     }),
-  
+
   update: protectedProcedure
     .input(
       z.object({
