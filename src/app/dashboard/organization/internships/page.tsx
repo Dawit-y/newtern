@@ -1,6 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import Link from "next/link";
+import { api } from "@/trpc/react";
+import { useOrganizationProfile } from "@/hooks/use-profile";
+import { format } from "date-fns";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -26,7 +31,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Users,
   Briefcase,
   Plus,
   MoreHorizontal,
@@ -34,86 +38,77 @@ import {
   Edit,
   Trash2,
   Calendar,
-  UserCheck,
   FileText,
   Search,
   Filter,
+  Clock,
 } from "lucide-react";
-import Link from "next/link";
 
-// Mock data
-const internships = [
-  {
-    id: 1,
-    title: "Frontend Developer Intern",
-    status: "active",
-    applicants: 23,
-    selected: 2,
-    tasks: 5,
-    deadline: "Dec 15, 2024",
-    created: "Nov 1, 2024",
-    duration: "3 months",
-    type: "paid",
-  },
-  {
-    id: 2,
-    title: "Data Analyst Intern",
-    status: "draft",
-    applicants: 0,
-    selected: 0,
-    tasks: 8,
-    deadline: "Dec 20, 2024",
-    created: "Nov 10, 2024",
-    duration: "4 months",
-    type: "paid",
-  },
-  {
-    id: 3,
-    title: "Marketing Intern",
-    status: "completed",
-    applicants: 12,
-    selected: 1,
-    tasks: 4,
-    deadline: "Nov 30, 2024",
-    created: "Oct 15, 2024",
-    duration: "2 months",
-    type: "unpaid",
-  },
-  {
-    id: 4,
-    title: "UI/UX Design Intern",
-    status: "paused",
-    applicants: 8,
-    selected: 0,
-    tasks: 6,
-    deadline: "Jan 15, 2025",
-    created: "Nov 5, 2024",
-    duration: "3 months",
-    type: "paid",
-  },
-];
+// Utility functions for badge colors
+const getTypeColor = (type: string) => {
+  if (type === "PAID") return "secondary";
+  if (type === "UNPAID") return "outline";
+  if (type === "STIPEND") return "default";
+  return "secondary";
+};
+const getStatusColor = (published: boolean, approved: boolean) => {
+  if (!published) return "secondary"; // Draft
+  if (published && !approved) return "outline"; // Pending approval
+  if (published && approved) return "default"; // Active
+  return "secondary";
+};
 
 export default function InternshipsPage() {
+  const { organizationId, isLoading: isProfileLoading } =
+    useOrganizationProfile();
+
+  const { data, isLoading, isError } =
+    api.internships.byOrganizationId.useQuery(organizationId ?? "", {
+      enabled: !!organizationId && !isProfileLoading,
+    });
+
   const [searchTerm, setSearchTerm] = useState("");
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-        return "default";
-      case "draft":
-        return "secondary";
-      case "completed":
-        return "outline";
-      case "paused":
-        return "destructive";
-      default:
-        return "secondary";
-    }
-  };
+  // Derived data
+  const filteredInternships = useMemo(() => {
+    if (!data) return [];
+    return data.filter((internship) =>
+      internship.title.toLowerCase().includes(searchTerm.toLowerCase()),
+    );
+  }, [data, searchTerm]);
 
-  const getTypeColor = (type: string) => {
-    return type === "paid" ? "default" : "secondary";
-  };
+  const stats = useMemo(() => {
+    if (!data) return { total: 0, published: 0, tasks: 0 };
+    const total = data.length;
+    const published = data.filter((i) => i.published).length;
+    const totalTasks = data.reduce((sum, i) => sum + i.tasks.length, 0);
+    return { total, published, tasks: totalTasks };
+  }, [data]);
+
+  if (isLoading || isProfileLoading) {
+    return (
+      <div className="text-muted-foreground flex h-screen items-center justify-center">
+        Loading internships...
+      </div>
+    );
+  }
+
+  if (isError || !data?.length) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center gap-2 text-center">
+        <p className="text-lg font-semibold">No internships found</p>
+        <p className="text-muted-foreground">
+          Create your first internship to get started.
+        </p>
+        <Link href="/dashboard/organization/internships/create">
+          <Button className="mt-2">
+            <Plus className="mr-2 h-4 w-4" />
+            Create Internship
+          </Button>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
@@ -122,7 +117,7 @@ export default function InternshipsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Internships</h1>
           <p className="text-muted-foreground">
-            Manage your internship programs and track applications
+            Manage your internship programs and track progress
           </p>
         </div>
         <Link href="/dashboard/organization/internships/create">
@@ -134,7 +129,7 @@ export default function InternshipsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -143,52 +138,40 @@ export default function InternshipsPage() {
             <Briefcase className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{internships.length}</div>
+            <div className="text-2xl font-bold">{stats.total}</div>
             <p className="text-muted-foreground text-xs">
-              {internships.filter((i) => i.status === "active").length} active
+              {stats.published} published
             </p>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Applications
-            </CardTitle>
-            <Users className="text-muted-foreground h-4 w-4" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {internships.reduce((sum, i) => sum + i.applicants, 0)}
-            </div>
-            <p className="text-muted-foreground text-xs">
-              Across all internships
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Selected Interns
-            </CardTitle>
-            <UserCheck className="text-muted-foreground h-4 w-4" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {internships.reduce((sum, i) => sum + i.selected, 0)}
-            </div>
-            <p className="text-muted-foreground text-xs">Currently working</p>
-          </CardContent>
-        </Card>
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
             <FileText className="text-muted-foreground h-4 w-4" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {internships.reduce((sum, i) => sum + i.tasks, 0)}
-            </div>
-            <p className="text-muted-foreground text-xs">Created tasks</p>
+            <div className="text-2xl font-bold">{stats.tasks}</div>
+            <p className="text-muted-foreground text-xs">
+              Across all internships
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Recent Activity
+            </CardTitle>
+            <Clock className="text-muted-foreground h-4 w-4" />
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground text-sm">
+              Last updated{" "}
+              {data?.[0]?.updatedAt
+                ? format(data[0].updatedAt, "MMM dd, yyyy")
+                : "Never"}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -218,7 +201,7 @@ export default function InternshipsPage() {
         <CardHeader>
           <CardTitle>Your Internships</CardTitle>
           <CardDescription>
-            A list of all your internship programs
+            A list of all your created internship programs
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -228,57 +211,58 @@ export default function InternshipsPage() {
                 <TableHead>Title</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Type</TableHead>
-                <TableHead>Applications</TableHead>
-                <TableHead>Selected</TableHead>
                 <TableHead>Tasks</TableHead>
                 <TableHead>Deadline</TableHead>
+                <TableHead>Duration</TableHead>
+                <TableHead>Created</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {internships.map((internship) => (
+              {filteredInternships.map((internship) => (
                 <TableRow key={internship.id}>
                   <TableCell>
                     <div className="space-y-1">
                       <div className="font-medium">{internship.title}</div>
-                      <div className="text-muted-foreground text-sm">
-                        {internship.duration} • Created {internship.created}
-                      </div>
+                      <p className="text-muted-foreground max-w-xs truncate text-sm">
+                        {internship.description}
+                      </p>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getStatusColor(internship.status)}>
-                      {internship.status}
+                    <Badge
+                      variant={getStatusColor(
+                        internship.published,
+                        internship.approved,
+                      )}
+                    >
+                      {!internship.published
+                        ? "Draft"
+                        : internship.approved
+                          ? "Active"
+                          : "Pending"}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     <Badge variant={getTypeColor(internship.type)}>
-                      {internship.type}
+                      {internship.type.toLowerCase()}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
-                      <Users className="text-muted-foreground h-4 w-4" />
-                      {internship.applicants}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <UserCheck className="text-muted-foreground h-4 w-4" />
-                      {internship.selected}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
                       <FileText className="text-muted-foreground h-4 w-4" />
-                      {internship.tasks}
+                      {internship.tasks.length}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
                       <Calendar className="text-muted-foreground h-4 w-4" />
-                      {internship.deadline}
+                      {format(new Date(internship.deadline), "MMM dd, yyyy")}
                     </div>
+                  </TableCell>
+                  <TableCell>{internship.duration}</TableCell>
+                  <TableCell>
+                    {format(internship.createdAt, "MMM dd, yyyy")}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -288,17 +272,21 @@ export default function InternshipsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Details
+                        <DropdownMenuItem asChild>
+                          <Link
+                            href={`/dashboard/organization/internships/${internship.id}`}
+                          >
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Details
+                          </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Users className="mr-2 h-4 w-4" />
-                          View Applications
+                        <DropdownMenuItem asChild>
+                          <Link
+                            href={`/dashboard/organization/internships/${internship.id}/edit`}
+                          >
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem className="text-red-600">
                           <Trash2 className="mr-2 h-4 w-4" />

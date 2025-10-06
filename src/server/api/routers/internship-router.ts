@@ -114,6 +114,16 @@ export const internshipsRouter = createTRPCRouter({
       return internship;
     }),
 
+  byOrganizationId: protectedProcedure
+    .input(z.string().cuid())
+    .query(async ({ input, ctx }) => {
+      const internships = await ctx.db.internship.findMany({
+        where: { organizationId: input },
+        include: { tasks: true },
+      });
+      return internships;
+    }),
+
   update: protectedProcedure
     .input(
       z.object({
