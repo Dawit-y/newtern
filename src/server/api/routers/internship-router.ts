@@ -10,6 +10,7 @@ import { TRPCError } from "@trpc/server";
 import { getOrgProfileOrThrow } from "@/server/lib/helpers/org";
 import {
   assertNotIntern,
+  assertOrganization,
   assertOrgOwnsInternship,
 } from "@/server/lib/helpers/auth";
 
@@ -17,7 +18,7 @@ export const internshipsRouter = createTRPCRouter({
   create: protectedProcedure
     .input(internshipSchema)
     .mutation(async ({ input, ctx }) => {
-      assertNotIntern(ctx);
+      assertOrganization(ctx);
 
       const slug = generateSlug(input.title);
       const orgProfile = await getOrgProfileOrThrow(
@@ -167,5 +168,36 @@ export const internshipsRouter = createTRPCRouter({
       return ctx.db.internship.delete({
         where: { id: input },
       });
+    }),
+  publish: protectedProcedure
+    .input(
+      z.object({
+        internshipId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const internship = await ctx.db.internship.findUnique({
+        where: { id: input.internshipId },
+      });
+
+      if (!internship) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Internship not found",
+        });
+      }
+
+      assertNotIntern(ctx);
+
+      if (ctx.session.user.role === "ORGANIZATION") {
+        await assertOrgOwnsInternship(ctx, internship);
+      }
+
+      await ctx.db.internship.update({
+        where: { id: input.internshipId },
+        data: { published: true },
+      });
+
+      return internship;
     }),
 });

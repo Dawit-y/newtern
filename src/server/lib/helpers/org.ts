@@ -15,3 +15,21 @@ export async function getOrgProfileOrThrow(db: PrismaClient, userId: string) {
 
   return orgProfile;
 }
+
+export async function getInternProfileOrThrow(
+  db: PrismaClient,
+  userId: string,
+) {
+  const internProfile = await db.internProfile.findUnique({
+    where: { userId },
+  });
+
+  if (!internProfile) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "Intern profile not found",
+    });
+  }
+
+  return internProfile;
+}

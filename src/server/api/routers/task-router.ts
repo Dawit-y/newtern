@@ -5,18 +5,39 @@ import {
 } from "@/server/api/trpc";
 import { z } from "zod";
 import { generateSlug } from "@/utils/common-methods";
-import { taskSchema } from "@/lib/validation/internships";
+import { taskBaseSchema } from "@/lib/validation/internships";
 
 export const tasksRouter = createTRPCRouter({
   create: protectedProcedure
-    .input(taskSchema)
+    .input(
+      taskBaseSchema.refine(
+        (data) => data.submitAsFile || data.submitAsText || data.submitAsUrl,
+        {
+          message: "At least one submission type is required",
+          path: ["submitAsFile"],
+        },
+      ),
+    )
     .mutation(async ({ input, ctx }) => {
       const slug = generateSlug(input.title);
 
+      const { resources, ...rest } = input;
+
       return ctx.db.task.create({
         data: {
-          ...input,
+          ...rest,
           slug,
+          ...(resources && {
+            resources: {
+              create: resources.map((r) => ({
+                name: r.name,
+                type: r.type,
+                description: r.description,
+                url: r.url,
+                file: r.file,
+              })),
+            },
+          }),
         },
       });
     }),
@@ -50,17 +71,42 @@ export const tasksRouter = createTRPCRouter({
       });
     }),
 
+  byInternshipId: publicProcedure
+    .input(z.string().cuid())
+    .query(async ({ ctx, input }) => {
+      return ctx.db.task.findMany({
+        where: { internshipId: input },
+        include: { resources: true },
+      });
+    }),
+  
   update: protectedProcedure
     .input(
       z.object({
         id: z.string().cuid(),
-        data: taskSchema.partial(),
+        data: taskBaseSchema.partial(),
       }),
     )
     .mutation(async ({ input, ctx }) => {
+      const { resources, ...rest } = input.data;
+
       return ctx.db.task.update({
         where: { id: input.id },
-        data: input.data,
+        data: {
+          ...rest,
+          ...(resources && {
+            resources: {
+              deleteMany: {}, // delete all old
+              create: resources.map((r) => ({
+                name: r.name,
+                type: r.type,
+                description: r.description,
+                url: r.url,
+                file: r.file,
+              })),
+            },
+          }),
+        },
       });
     }),
 

@@ -360,7 +360,7 @@ export default function ApplicationsPage() {
                             <Eye className="h-4 w-4" />
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
+                        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto sm:max-w-3xl">
                           <DialogHeader>
                             <DialogTitle>Application Details</DialogTitle>
                             <DialogDescription>
