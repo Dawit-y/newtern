@@ -139,9 +139,18 @@ export const internshipsRouter = createTRPCRouter({
         await assertOrgOwnsInternship(ctx, internship);
       }
 
+      let slug = internship.slug;
+      if (
+        !internship.published &&
+        input.data.title &&
+        input.data.title.trim() !== internship.title.trim()
+      ) {
+        slug = generateSlug(input.data.title);
+      }
+
       return ctx.db.internship.update({
         where: { id: input.id },
-        data: input.data,
+        data: { ...input.data, slug },
       });
     }),
 

@@ -86,6 +86,8 @@ export default function TaskCreationWizard({
 
   const form = useForm<TaskFormType>({
     resolver: zodResolver(taskSchema),
+    mode: "onBlur",
+    reValidateMode: "onChange",
     defaultValues: {
       title: "",
       overview: "",
@@ -196,7 +198,7 @@ export default function TaskCreationWizard({
         internshipId,
         // Map local state resources to the expected TRPC format
         resources: resources
-          .filter((r) => r.name && (r.url ?? r.type === "FILE")) 
+          .filter((r) => r.name && (r.url ?? r.type === "FILE"))
           .map((r) => ({
             name: r.name,
             type: r.type,
@@ -314,7 +316,9 @@ export default function TaskCreationWizard({
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="background">Background & Context</Label>
+                    <Label htmlFor="background">
+                      Background & Context (optional)
+                    </Label>
                     <Textarea
                       id="background"
                       placeholder="Provide context about why this task is important..."

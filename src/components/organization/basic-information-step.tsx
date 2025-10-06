@@ -45,7 +45,15 @@ export default function BasicInformationStep({
           </div>
           <div className="space-y-2">
             <Label htmlFor="duration">Duration *</Label>
-            <Select onValueChange={(value) => form.setValue("duration", value)}>
+            <Select
+              onValueChange={(value) =>
+                form.setValue("duration", value, {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                  shouldTouch: true,
+                })
+              }
+            >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select duration" />
               </SelectTrigger>
@@ -68,7 +76,11 @@ export default function BasicInformationStep({
             <Label htmlFor="type">Type *</Label>
             <Select
               onValueChange={(value) =>
-                form.setValue("type", value as InternshipPaymentType)
+                form.setValue("type", value as InternshipPaymentType, {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                  shouldTouch: true,
+                })
               }
             >
               <SelectTrigger className="w-full">
@@ -93,6 +105,16 @@ export default function BasicInformationStep({
             />
             {errors.location && (
               <p className="text-sm text-red-500">{errors.location.message}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="deadline">Application Deadline *</Label>
+            <Input id="deadline" type="date" {...register("deadline")} />
+            {errors.deadline && (
+              <p className="text-sm text-red-500">{errors.deadline.message}</p>
             )}
           </div>
         </div>
@@ -122,14 +144,6 @@ export default function BasicInformationStep({
             <p className="text-sm text-red-500">
               {errors.requirements.message}
             </p>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="deadline">Application Deadline *</Label>
-          <Input id="deadline" type="date" {...register("deadline")} />
-          {errors.deadline && (
-            <p className="text-sm text-red-500">{errors.deadline.message}</p>
           )}
         </div>
       </div>

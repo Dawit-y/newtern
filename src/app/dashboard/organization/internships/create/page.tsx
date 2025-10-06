@@ -48,18 +48,21 @@ export default function CreateInternshipPage() {
       setCreatedInternshipId(data.id);
     },
   });
+  const updateInternship = api.internships.update.useMutation();
 
   const publishInternship = api.internships.publish.useMutation();
 
   const form = useForm<InternshipType>({
     resolver: zodResolver(internshipSchema),
+    mode: "onBlur",
+    reValidateMode: "onChange",
     defaultValues: {
       title: "",
       description: "",
       duration: "",
       type: undefined,
       location: "",
-      requirements: null,
+      requirements: "",
       skills: [],
       deadline: new Date(),
       organizationId: organizationId ?? "",
@@ -70,24 +73,36 @@ export default function CreateInternshipPage() {
 
   const handleNext = async () => {
     if (currentStep === 1) {
-      // Wait for profile to load
       if (isProfileLoading || !organizationId) {
         console.log("Waiting for profile to load...");
         return;
       }
+
       const isValid = await form.trigger();
       if (!isValid) return;
+
+      const formData = form.getValues();
+      const formattedData = {
+        ...formData,
+        deadline: new Date(formData.deadline),
+        organizationId,
+      };
+
       try {
-        const formData = form.getValues();
-        const formattedData = {
-          ...formData,
-          deadline: new Date(formData.deadline),
-        };
-        const result = await createInternship.mutateAsync(formattedData);
-        setCreatedInternshipId(result.id);
+        if (createdInternshipId) {
+          await updateInternship.mutateAsync({
+            id: createdInternshipId,
+            data: formattedData,
+          });
+          console.log("Internship updated successfully");
+        } else {
+          const result = await createInternship.mutateAsync(formattedData);
+          setCreatedInternshipId(result.id);
+        }
+
         setCurrentStep(2);
       } catch (error) {
-        console.error("Failed to create internship:", error);
+        console.error("Failed to save internship:", error);
       }
     } else if (currentStep < steps.length) {
       setCurrentStep(currentStep + 1);
