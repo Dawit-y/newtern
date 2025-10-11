@@ -70,13 +70,15 @@ model InternProfile {
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  firstName    String
-  lastName     String
-  university   String
-  major        String?
-  skills       String?
-  bio          String?
-  applications Application[]
+  firstName          String
+  lastName           String
+  university         String
+  major              String?
+  skills             String?
+  bio                String?
+  applications       Application[]
+  taskProgress       TaskProgress[]
+  internshipProgress InternshipProgress[]
 
   @@map("intern_profile")
 }
@@ -132,10 +134,11 @@ model Internship {
   published    Boolean        @default(false)
   approved     Boolean        @default(false)
 
-  organizationId String
-  organization   OrganizationProfile @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  tasks          Task[]
-  applications   Application[]
+  organizationId     String
+  organization       OrganizationProfile  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  tasks              Task[]
+  applications       Application[]
+  internshipProgress InternshipProgress[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -158,8 +161,9 @@ model Task {
   submitAsUrl            Boolean @default(false)
 
   internshipId String
-  internship   Internship @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  internship   Internship     @relation(fields: [internshipId], references: [id], onDelete: Cascade)
   resources    Resource[]
+  taskProgress TaskProgress[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -211,4 +215,47 @@ model Application {
 
   @@unique([internId, internshipId])
   @@map("applications")
+}
+
+model InternshipProgress {
+  id           String           @id @default(cuid())
+  internId     String
+  internshipId String
+  progress     Float            @default(0) // 0 - 100 (%)
+  status       InternshipStatus @default(IN_PROGRESS)
+  startedAt    DateTime         @default(now())
+  completedAt  DateTime?
+
+  intern     InternProfile @relation(fields: [internId], references: [id])
+  internship Internship    @relation(fields: [internshipId], references: [id])
+
+  @@unique([internId, internshipId])
+  @@map("internship_progress")
+}
+
+enum InternshipStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+model TaskProgress {
+  id          String     @id @default(cuid())
+  taskId      String
+  internId    String
+  status      TaskStatus @default(NOT_STARTED)
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  task   Task          @relation(fields: [taskId], references: [id])
+  intern InternProfile @relation(fields: [internId], references: [id])
+
+  @@unique([taskId, internId])
+  @@map("task_progress")
+}
+
+enum TaskStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
 }
