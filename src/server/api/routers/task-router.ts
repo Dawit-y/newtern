@@ -5,7 +5,7 @@ import {
 } from "@/server/api/trpc";
 import { z } from "zod";
 import { generateSlug } from "@/utils/common-methods";
-import { taskBaseSchema } from "@/lib/validation/internships";
+import { taskBaseSchema } from "@/lib/validation/tasks";
 
 export const tasksRouter = createTRPCRouter({
   create: protectedProcedure

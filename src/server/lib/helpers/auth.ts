@@ -6,7 +6,6 @@ import { getOrgProfileOrThrow } from "./org";
  * Ensure the user is not an INTERN
  */
 export function assertNotIntern(ctx: ProtectedContext) {
-
   if (ctx.session.user.role === "INTERN") {
     throw new TRPCError({ code: "UNAUTHORIZED", message: "Not authorized" });
   }
@@ -16,11 +15,21 @@ export function assertNotIntern(ctx: ProtectedContext) {
  * Ensure the user is an ORGANIZATION
  */
 export function assertOrganization(ctx: ProtectedContext) {
-
   if (ctx.session.user.role !== "ORGANIZATION") {
     throw new TRPCError({
       code: "UNAUTHORIZED",
       message: "Only organizations can perform this action",
+    });
+  }
+}
+/**
+ * Ensure the user is an ADMIN
+ */
+export function assertAdmin(ctx: ProtectedContext) {
+  if (ctx.session.user.role !== "ADMIN") {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "Only admins can perform this action",
     });
   }
 }
@@ -30,11 +39,32 @@ export function assertOrganization(ctx: ProtectedContext) {
  */
 export async function assertOrgOwnsInternship(
   ctx: ProtectedContext,
-  internship: { organizationId: string },
+  internship: { organizationId?: string; internshipId?: string },
 ) {
-
   const orgProfile = await getOrgProfileOrThrow(ctx.db, ctx.session.user.id);
-  if (internship.organizationId !== orgProfile.id) {
-    throw new TRPCError({ code: "UNAUTHORIZED", message: "Not authorized" });
+
+  if (internship.organizationId) {
+    if (internship.organizationId !== orgProfile.id) {
+      throw new TRPCError({ code: "UNAUTHORIZED", message: "Not authorized" });
+    }
+  } else if (internship.internshipId) {
+    const internshipRecord = await ctx.db.internship.findUnique({
+      where: { id: internship.internshipId },
+      select: { organizationId: true },
+    });
+    if (!internshipRecord) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Internship not found",
+      });
+    }
+    if (internshipRecord.organizationId !== orgProfile.id) {
+      throw new TRPCError({ code: "UNAUTHORIZED", message: "Not authorized" });
+    }
+  } else {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Must provide either internshipId or organizationId",
+    });
   }
 }

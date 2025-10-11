@@ -1,8 +1,10 @@
 "use client";
 
-import { Label } from "@/components/ui/label";
-
 import { useState } from "react";
+import { api, type RouterOutputs } from "@/trpc/react";
+import { type ApplicationStatus } from "@/lib/validation/applications";
+import { getInternFullName } from "@/server/lib/helpers/intern";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -48,120 +50,7 @@ import {
   Clock,
 } from "lucide-react";
 
-type Application = {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  location: string;
-  university: string;
-  major: string;
-  graduationYear: string;
-  internship: string;
-  internshipId: number;
-  status: string;
-  appliedDate: string;
-  score: number;
-  experience: string;
-  skills: string[];
-  gpa: string;
-  resume: string;
-  coverLetter: string;
-  portfolio: string;
-  availability: string;
-};
-
-// Mock data
-const applications = [
-  {
-    id: 1,
-    name: "Sarah Chen",
-    email: "sarah.chen@email.com",
-    phone: "+1 (555) 123-4567",
-    location: "San Francisco, CA",
-    university: "Stanford University",
-    major: "Computer Science",
-    graduationYear: "2025",
-    internship: "Frontend Developer Intern",
-    internshipId: 1,
-    status: "pending",
-    appliedDate: "Nov 15, 2024",
-    score: 85,
-    experience: "Intermediate",
-    skills: ["React", "TypeScript", "CSS", "JavaScript"],
-    gpa: "3.8",
-    resume: "sarah_chen_resume.pdf",
-    coverLetter: "I am excited to apply for the Frontend Developer position...",
-    portfolio: "https://sarahchen.dev",
-    availability: "Immediately",
-  },
-  {
-    id: 2,
-    name: "Mike Johnson",
-    email: "mike.johnson@email.com",
-    phone: "+1 (555) 987-6543",
-    location: "New York, NY",
-    university: "NYU",
-    major: "Computer Science",
-    graduationYear: "2024",
-    internship: "Frontend Developer Intern",
-    internshipId: 1,
-    status: "accepted",
-    appliedDate: "Nov 12, 2024",
-    score: 92,
-    experience: "Advanced",
-    skills: ["React", "Node.js", "Python", "AWS"],
-    gpa: "3.9",
-    resume: "mike_johnson_resume.pdf",
-    coverLetter: "With 2 years of experience in web development...",
-    portfolio: "https://mikejohnson.com",
-    availability: "January 2025",
-  },
-  {
-    id: 3,
-    name: "Emily Davis",
-    email: "emily.davis@email.com",
-    phone: "+1 (555) 456-7890",
-    location: "Austin, TX",
-    university: "UT Austin",
-    major: "Marketing",
-    graduationYear: "2025",
-    internship: "Marketing Intern",
-    internshipId: 3,
-    status: "rejected",
-    appliedDate: "Nov 8, 2024",
-    score: 67,
-    experience: "Beginner",
-    skills: ["Social Media", "Content Creation", "Analytics"],
-    gpa: "3.5",
-    resume: "emily_davis_resume.pdf",
-    coverLetter: "I am passionate about digital marketing...",
-    portfolio: "https://emilydavis.portfolio.com",
-    availability: "Flexible",
-  },
-  {
-    id: 4,
-    name: "Alex Rodriguez",
-    email: "alex.rodriguez@email.com",
-    phone: "+1 (555) 321-0987",
-    location: "Los Angeles, CA",
-    university: "UCLA",
-    major: "Data Science",
-    graduationYear: "2024",
-    internship: "Data Analyst Intern",
-    internshipId: 2,
-    status: "pending",
-    appliedDate: "Nov 18, 2024",
-    score: 78,
-    experience: "Intermediate",
-    skills: ["Python", "SQL", "Machine Learning", "Tableau"],
-    gpa: "3.7",
-    resume: "alex_rodriguez_resume.pdf",
-    coverLetter: "As a data science student with hands-on experience...",
-    portfolio: "https://github.com/alexrodriguez",
-    availability: "February 2025",
-  },
-];
+type Application = RouterOutputs["applications"]["list"][number];
 
 export default function ApplicationsPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -169,6 +58,12 @@ export default function ApplicationsPage() {
     useState<Application | null>(null);
 
   const [statusFilter, setStatusFilter] = useState("all");
+
+  const {
+    data: applications = [],
+    isLoading,
+    isError,
+  } = api.applications.list.useQuery();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -183,25 +78,41 @@ export default function ApplicationsPage() {
     }
   };
 
-  const handleStatusChange = (applicationId: number, newStatus: string) => {
+  const handleStatusChange = (applicationId: string, newStatus: ApplicationStatus) => {
     // In a real app, this would make an API call
     console.log(`Changing application ${applicationId} status to ${newStatus}`);
   };
 
   const filteredApplications = applications.filter((app) => {
     const matchesSearch =
-      app.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      app.internship.toLowerCase().includes(searchTerm.toLowerCase());
+      app.intern.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      app.internship.title.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || app.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   const stats = {
     total: applications.length,
-    pending: applications.filter((app) => app.status === "pending").length,
-    accepted: applications.filter((app) => app.status === "accepted").length,
-    rejected: applications.filter((app) => app.status === "rejected").length,
+    pending: applications.filter((app) => app.status === "PENDING").length,
+    accepted: applications.filter((app) => app.status === "ACCEPTED").length,
+    rejected: applications.filter((app) => app.status === "REJECTED").length,
   };
+
+  if (isLoading) {
+    return (
+      <div className="text-muted-foreground flex h-screen items-center justify-center">
+        Loading applications...
+      </div>
+    );
+  }
+
+  if (isError || !applications?.length) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center gap-2 text-center">
+        <p className="text-lg font-semibold">No applications found</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-6">
@@ -299,7 +210,6 @@ export default function ApplicationsPage() {
                 <TableHead>Candidate</TableHead>
                 <TableHead>Internship</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Score</TableHead>
                 <TableHead>Applied</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -311,24 +221,28 @@ export default function ApplicationsPage() {
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
                         <AvatarFallback>
-                          {application.name
+                          {application.intern.firstName
                             .split(" ")
                             .map((n) => n[0])
                             .join("")}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-medium">{application.name}</div>
+                        <div className="font-medium">
+                          {getInternFullName(application.intern)}
+                        </div>
                         <div className="text-muted-foreground text-sm">
-                          {application.university}
+                          {application.intern.university}
                         </div>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="font-medium">{application.internship}</div>
+                    <div className="font-medium">
+                      {application.internship.title}
+                    </div>
                     <div className="text-muted-foreground text-sm">
-                      {application.major}
+                      {application.internship.type}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -338,14 +252,12 @@ export default function ApplicationsPage() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4 fill-current text-yellow-400" />
-                      <span className="font-medium">{application.score}%</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
                       <Calendar className="text-muted-foreground h-4 w-4" />
-                      {application.appliedDate}
+                      {application.createdAt.toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -364,8 +276,9 @@ export default function ApplicationsPage() {
                           <DialogHeader>
                             <DialogTitle>Application Details</DialogTitle>
                             <DialogDescription>
-                              Review {application.name}&apos;s application for{" "}
-                              {application.internship}
+                              Review {getInternFullName(application.intern)}
+                              &apos;s application for{" "}
+                              {application.internship.title}
                             </DialogDescription>
                           </DialogHeader>
 
@@ -383,7 +296,7 @@ export default function ApplicationsPage() {
                                     <div className="flex items-center gap-3">
                                       <Avatar className="h-12 w-12">
                                         <AvatarFallback className="text-lg">
-                                          {selectedApplication.name
+                                          {selectedApplication.intern.firstName
                                             .split(" ")
                                             .map((n: string) => n[0])
                                             .join("")}
@@ -391,10 +304,12 @@ export default function ApplicationsPage() {
                                       </Avatar>
                                       <div>
                                         <h3 className="text-lg font-semibold">
-                                          {selectedApplication.name}
+                                          {getInternFullName(
+                                            selectedApplication.intern,
+                                          )}
                                         </h3>
                                         <p className="text-muted-foreground">
-                                          {selectedApplication.major}
+                                          {selectedApplication.intern.major}
                                         </p>
                                       </div>
                                     </div>
@@ -403,29 +318,32 @@ export default function ApplicationsPage() {
                                       <div className="flex items-center gap-2">
                                         <Mail className="text-muted-foreground h-4 w-4" />
                                         <span className="text-sm">
-                                          {selectedApplication.email}
+                                          {
+                                            selectedApplication.intern.user
+                                              .email
+                                          }
                                         </span>
                                       </div>
-                                      <div className="flex items-center gap-2">
+                                      {/* <div className="flex items-center gap-2">
                                         <Phone className="text-muted-foreground h-4 w-4" />
                                         <span className="text-sm">
-                                          {selectedApplication.phone}
+                                          {selectedApplication.intern.user.phone}
                                         </span>
                                       </div>
                                       <div className="flex items-center gap-2">
                                         <MapPin className="text-muted-foreground h-4 w-4" />
                                         <span className="text-sm">
-                                          {selectedApplication.location}
+                                          {selectedApplication.intern.location}
                                         </span>
-                                      </div>
-                                      <div className="flex items-center gap-2">
+                                      </div> */}
+                                      {/* <div className="flex items-center gap-2">
                                         <GraduationCap className="text-muted-foreground h-4 w-4" />
                                         <span className="text-sm">
-                                          {selectedApplication.university} •
+                                          {selectedApplication.intern.university} •
                                           Class of{" "}
-                                          {selectedApplication.graduationYear}
+                                          {selectedApplication.intern.graduationYear}
                                         </span>
-                                      </div>
+                                      </div> */}
                                     </div>
                                   </CardContent>
                                 </Card>
@@ -437,12 +355,12 @@ export default function ApplicationsPage() {
                                     </CardTitle>
                                   </CardHeader>
                                   <CardContent className="space-y-4">
-                                    <div>
+                                    {/* <div>
                                       <Label className="text-sm font-medium">
                                         GPA
                                       </Label>
                                       <p className="text-muted-foreground text-sm">
-                                        {selectedApplication.gpa}
+                                        {selectedApplication.intern.gpa}
                                       </p>
                                     </div>
                                     <div>
@@ -450,7 +368,7 @@ export default function ApplicationsPage() {
                                         Experience Level
                                       </Label>
                                       <p className="text-muted-foreground text-sm">
-                                        {selectedApplication.experience}
+                                        {selectedApplication.intern.experience}
                                       </p>
                                     </div>
                                     <div>
@@ -460,13 +378,13 @@ export default function ApplicationsPage() {
                                       <p className="text-muted-foreground text-sm">
                                         {selectedApplication.availability}
                                       </p>
-                                    </div>
+                                    </div> */}
                                     <div>
                                       <Label className="text-sm font-medium">
                                         Skills
                                       </Label>
-                                      <div className="mt-1 flex flex-wrap gap-1">
-                                        {selectedApplication.skills.map(
+                                      {/* <div className="mt-1 flex flex-wrap gap-1">
+                                        {selectedApplication.intern?.skills?.map(
                                           (skill: string) => (
                                             <Badge
                                               key={skill}
@@ -477,6 +395,9 @@ export default function ApplicationsPage() {
                                             </Badge>
                                           ),
                                         )}
+                                      </div> */}
+                                      <div className="mt-1 flex flex-wrap gap-1">
+                                        {selectedApplication.intern?.skills}
                                       </div>
                                     </div>
                                   </CardContent>
@@ -524,15 +445,15 @@ export default function ApplicationsPage() {
                                         Portfolio
                                       </span>
                                     </div>
-                                    <Button variant="outline" size="sm" asChild>
+                                    {/* <Button variant="outline" size="sm" asChild>
                                       <a
-                                        href={selectedApplication.portfolio}
+                                        href={selectedApplication.intern.portfolio}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                       >
                                         View
                                       </a>
-                                    </Button>
+                                    </Button> */}
                                   </div>
                                 </CardContent>
                               </Card>
@@ -544,7 +465,7 @@ export default function ApplicationsPage() {
                                   onClick={() =>
                                     handleStatusChange(
                                       selectedApplication.id,
-                                      "rejected",
+                                      "REJECTED",
                                     )
                                   }
                                   className="flex items-center gap-2"
@@ -556,7 +477,7 @@ export default function ApplicationsPage() {
                                   onClick={() =>
                                     handleStatusChange(
                                       selectedApplication.id,
-                                      "accepted",
+                                      "ACCEPTED",
                                     )
                                   }
                                   className="flex items-center gap-2"
@@ -570,13 +491,13 @@ export default function ApplicationsPage() {
                         </DialogContent>
                       </Dialog>
 
-                      {application.status === "pending" && (
+                      {application.status === "PENDING" && (
                         <>
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() =>
-                              handleStatusChange(application.id, "accepted")
+                              handleStatusChange(application.id, "ACCEPTED")
                             }
                             className="text-green-600 hover:text-green-700"
                           >
@@ -586,7 +507,7 @@ export default function ApplicationsPage() {
                             variant="outline"
                             size="sm"
                             onClick={() =>
-                              handleStatusChange(application.id, "rejected")
+                              handleStatusChange(application.id, "REJECTED")
                             }
                             className="text-red-600 hover:text-red-700"
                           >

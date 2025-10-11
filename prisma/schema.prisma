@@ -70,12 +70,13 @@ model InternProfile {
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  firstName  String
-  lastName   String
-  university String
-  major      String?
-  skills     String?
-  bio        String?
+  firstName    String
+  lastName     String
+  university   String
+  major        String?
+  skills       String?
+  bio          String?
+  applications Application[]
 
   @@map("intern_profile")
 }
@@ -134,6 +135,7 @@ model Internship {
   organizationId String
   organization   OrganizationProfile @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   tasks          Task[]
+  applications   Application[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -185,4 +187,28 @@ model Resource {
   updatedAt DateTime @updatedAt
 
   @@map("resources")
+}
+
+enum ApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+model Application {
+  id            String            @id @default(cuid())
+  internId      String
+  intern        InternProfile     @relation(fields: [internId], references: [id], onDelete: Cascade)
+  internshipId  String
+  internship    Internship        @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  coverLetter   String?
+  resume        String?
+  portfolioLink String?
+  status        ApplicationStatus @default(PENDING)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@unique([internId, internshipId])
+  @@map("applications")
 }

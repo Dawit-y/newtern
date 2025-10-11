@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { format } from "date-fns";
-import { api } from "@/trpc/react";
+import { api, type RouterOutputs } from "@/trpc/react";
 import { useOrganizationProfile } from "@/hooks/use-profile";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,13 +43,11 @@ import {
   Trash2,
   FileText,
   Search,
-  Plus,
   Upload,
   LinkIcon,
   CheckCircle,
   Clock,
 } from "lucide-react";
-import type { RouterOutputs } from "@/trpc/react";
 
 type Task = RouterOutputs["tasks"]["listByOrganizationId"][number];
 
@@ -147,10 +145,6 @@ export default function TasksPage() {
             Manage tasks across all your internships
           </p>
         </div>
-        <Button className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Create Task
-        </Button>
       </div>
 
       {/* Stats */}

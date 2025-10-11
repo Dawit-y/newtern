@@ -4,7 +4,7 @@ import {
   publicProcedure,
 } from "@/server/api/trpc";
 import { z } from "zod";
-import { resourceSchema } from "@/lib/validation/internships";
+import { resourceSchema } from "@/lib/validation/resources";
 
 export const resourcesRouter = createTRPCRouter({
   create: protectedProcedure

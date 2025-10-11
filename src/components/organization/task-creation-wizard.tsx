@@ -29,7 +29,8 @@ import {
   CheckCircle,
   Trash2,
 } from "lucide-react";
-import { type ResourceType, taskSchema } from "@/lib/validation/internships";
+import { taskSchema } from "@/lib/validation/tasks";
+import { type ResourceType } from "@/lib/validation/resources";
 
 // Form-specific type that matches the schema exactly
 type TaskFormType = {
