@@ -129,37 +129,7 @@ export default function ApplyPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col">
-      {/* Header */}
-      <header className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 flex h-16 items-center border-b px-4 backdrop-blur lg:px-6">
-        <Link
-          href="/dashboard/intern"
-          className="flex items-center justify-center"
-        >
-          <Briefcase className="text-primary h-8 w-8" />
-          <span className="text-primary ml-2 text-2xl font-bold">Newtern</span>
-        </Link>
-        <nav className="ml-auto flex gap-4 sm:gap-6">
-          <Link
-            href="/dashboard/intern"
-            className="text-sm font-medium underline-offset-4 hover:underline"
-          >
-            Dashboard
-          </Link>
-          <Link
-            href="/dashboard/intern/browse"
-            className="text-sm font-medium underline-offset-4 hover:underline"
-          >
-            Browse
-          </Link>
-        </nav>
-        <div className="ml-6 flex items-center gap-2">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback>JD</AvatarFallback>
-          </Avatar>
-        </div>
-      </header>
-
+    <>
       <main className="from-background to-muted/20 flex-1 bg-gradient-to-b">
         <div className="container px-4 py-8 md:px-6">
           {/* Back Button */}
@@ -733,6 +703,6 @@ export default function ApplyPage() {
           </div>
         </div>
       </main>
-    </div>
+    </>
   );
 }
