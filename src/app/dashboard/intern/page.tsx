@@ -1,6 +1,9 @@
 "use client";
 
+import { api } from "@/trpc/react";
+import { useSession } from "@/lib/auth-client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -30,82 +33,14 @@ import {
   TrendingUp,
 } from "lucide-react";
 
-// Mock data
-const internships = [
-  {
-    id: 1,
-    title: "Frontend Developer Intern",
-    company: "TechStart Inc.",
-    location: "Remote",
-    duration: "3 months",
-    tasks: 5,
-    applicants: 23,
-    deadline: "Dec 15, 2024",
-    description:
-      "Work on React components and user interfaces for our main product.",
-    skills: ["React", "TypeScript", "CSS"],
-    type: "Paid",
-  },
-  {
-    id: 2,
-    title: "Data Science Intern",
-    company: "DataCorp",
-    location: "New York, NY",
-    duration: "4 months",
-    tasks: 8,
-    applicants: 45,
-    deadline: "Dec 20, 2024",
-    description: "Analyze customer data and build predictive models.",
-    skills: ["Python", "Machine Learning", "SQL"],
-    type: "Paid",
-  },
-  {
-    id: 3,
-    title: "Marketing Intern",
-    company: "GrowthCo",
-    location: "Remote",
-    duration: "2 months",
-    tasks: 4,
-    applicants: 12,
-    deadline: "Dec 10, 2024",
-    description: "Create content and manage social media campaigns.",
-    skills: ["Content Creation", "Social Media", "Analytics"],
-    type: "Unpaid",
-  },
-];
-
-const myInternships = [
-  {
-    id: 1,
-    title: "UI/UX Design Intern",
-    company: "DesignHub",
-    status: "completed",
-    progress: 100,
-    tasksCompleted: 6,
-    totalTasks: 6,
-    startDate: "Sep 2024",
-    endDate: "Nov 2024",
-    certificate: true,
-    rating: 4.8,
-  },
-  {
-    id: 2,
-    title: "Backend Developer Intern",
-    company: "CodeBase",
-    status: "in-progress",
-    progress: 60,
-    tasksCompleted: 3,
-    totalTasks: 5,
-    startDate: "Nov 2024",
-    endDate: "Jan 2025",
-    certificate: false,
-    rating: null,
-  },
-];
-
 export default function InternDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTab, setSelectedTab] = useState("browse");
+  const router = useRouter();
+
+  const { data: session } = useSession();
+  const { data: internships } = api.internships.listPublic.useQuery();
+  const { data: myInternships } = api.internships.listForIntern.useQuery();
 
   return (
     <>
@@ -116,7 +51,7 @@ export default function InternDashboard() {
             <div className="flex flex-col items-center space-y-4 text-center">
               <div className="space-y-2">
                 <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-                  Welcome back, John! 👋
+                  Welcome back, {session?.user.name}! 👋
                 </h1>
                 <p className="text-muted-foreground mx-auto max-w-[700px] md:text-xl">
                   Continue your journey with new internship opportunities and
@@ -181,7 +116,7 @@ export default function InternDashboard() {
               onValueChange={setSelectedTab}
               className="w-full"
             >
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="mb-6 grid w-full grid-cols-3">
                 <TabsTrigger value="browse">Browse Internships</TabsTrigger>
                 <TabsTrigger value="my-internships">My Internships</TabsTrigger>
                 <TabsTrigger value="achievements">Achievements</TabsTrigger>
@@ -206,7 +141,7 @@ export default function InternDashboard() {
                 </div>
 
                 <div className="grid gap-6">
-                  {internships.map((internship) => (
+                  {internships?.map((internship) => (
                     <Card
                       key={internship.id}
                       className="transition-shadow hover:shadow-md"
@@ -220,7 +155,7 @@ export default function InternDashboard() {
                             <CardDescription className="flex items-center gap-4">
                               <span className="flex items-center gap-1">
                                 <Building2 className="h-4 w-4" />
-                                {internship.company}
+                                {internship.organization.organizationName}
                               </span>
                               <span className="flex items-center gap-1">
                                 <MapPin className="h-4 w-4" />
@@ -234,9 +169,11 @@ export default function InternDashboard() {
                           </div>
                           <Badge
                             variant={
-                              internship.type === "Paid"
+                              internship.type === "PAID"
                                 ? "default"
-                                : "secondary"
+                                : internship.type === "UNPAID"
+                                  ? "outline"
+                                  : "secondary"
                             }
                           >
                             {internship.type}
@@ -257,14 +194,34 @@ export default function InternDashboard() {
                         </div>
 
                         <div className="text-muted-foreground flex items-center justify-between text-sm">
-                          <span>{internship.tasks} tasks</span>
-                          <span>{internship.applicants} applicants</span>
-                          <span>Deadline: {internship.deadline}</span>
+                          <span>{internship._count.tasks} tasks</span>
+                          <span>
+                            {internship._count.applications} applicants
+                          </span>
+                          <span>
+                            Deadline: {internship.deadline.toISOString()}
+                          </span>
                         </div>
 
-                        <div className="flex gap-2">
-                          <Button className="flex-1">Apply Now</Button>
-                          <Button variant="outline">
+                        <div className="flex items-center justify-between gap-2">
+                          <Button
+                            className="w-50"
+                            onClick={() =>
+                              router.push(
+                                `/dashboard/intern/internship/${internship.id}/apply`,
+                              )
+                            }
+                          >
+                            Apply Now
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() =>
+                              router.push(
+                                `/dashboard/intern/internship/${internship.id}/`,
+                              )
+                            }
+                          >
                             <ExternalLink className="h-4 w-4" />
                           </Button>
                         </div>
@@ -277,7 +234,12 @@ export default function InternDashboard() {
               {/* My Internships Tab */}
               <TabsContent value="my-internships" className="space-y-6">
                 <div className="grid gap-6">
-                  {myInternships.map((internship) => (
+                  {myInternships?.length === 0 && (
+                    <p className="text-muted-foreground text-center">
+                      You have not applied to any internships yet.
+                    </p>
+                  )}
+                  {myInternships?.map((internship) => (
                     <Card key={internship.id}>
                       <CardHeader>
                         <div className="flex items-start justify-between">
@@ -288,22 +250,24 @@ export default function InternDashboard() {
                             <CardDescription className="flex items-center gap-4">
                               <span className="flex items-center gap-1">
                                 <Building2 className="h-4 w-4" />
-                                {internship.company}
+                                {internship.organization.organizationName}
                               </span>
                               <span className="flex items-center gap-1">
                                 <Calendar className="h-4 w-4" />
-                                {internship.startDate} - {internship.endDate}
+                                {internship.deadline.toISOString()}
                               </span>
                             </CardDescription>
                           </div>
                           <Badge
                             variant={
-                              internship.status === "completed"
+                              internship.internshipProgress?.status ===
+                              "COMPLETED"
                                 ? "default"
                                 : "secondary"
                             }
                           >
-                            {internship.status === "completed"
+                            {internship.internshipProgress?.status ===
+                            "COMPLETED"
                               ? "Completed"
                               : "In Progress"}
                           </Badge>
@@ -314,38 +278,46 @@ export default function InternDashboard() {
                           <div className="flex justify-between text-sm">
                             <span>Progress</span>
                             <span>
-                              {internship.tasksCompleted}/
-                              {internship.totalTasks} tasks
+                              {(internship.internshipProgress?.progress ??
+                                0 / 100) * internship._count.tasks}
+                              /{internship._count.tasks} tasks
                             </span>
                           </div>
                           <Progress
-                            value={internship.progress}
+                            value={internship.internshipProgress?.progress}
                             className="w-full"
                           />
                         </div>
 
-                        {internship.status === "completed" && (
+                        {internship.internshipProgress?.status ===
+                          "COMPLETED" && (
                           <div className="flex items-center justify-between rounded-lg bg-green-50 p-4">
                             <div className="flex items-center gap-2">
                               <CheckCircle className="h-5 w-5 text-green-600" />
                               <span className="text-sm font-medium">
                                 Internship Completed!
                               </span>
-                              {internship.rating && (
+                              {/* {internship.rating && (
                                 <div className="flex items-center gap-1">
                                   <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                                   <span className="text-sm">
                                     {internship.rating}
                                   </span>
                                 </div>
-                              )}
+                              )} */}
+                              {
+                                <div className="flex items-center gap-1">
+                                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                                  <span className="text-sm">{5}</span>
+                                </div>
+                              }
                             </div>
-                            {internship.certificate && (
+                            {
                               <Button size="sm" variant="outline">
                                 <Download className="mr-2 h-4 w-4" />
                                 Certificate
                               </Button>
-                            )}
+                            }
                           </div>
                         )}
 
@@ -353,9 +325,8 @@ export default function InternDashboard() {
                           <Button variant="outline" className="flex-1">
                             View Details
                           </Button>
-                          {internship.status === "in-progress" && (
-                            <Button>Continue Tasks</Button>
-                          )}
+                          {internship.internshipProgress?.status ===
+                            "IN_PROGRESS" && <Button>Continue Tasks</Button>}
                         </div>
                       </CardContent>
                     </Card>

@@ -50,6 +50,15 @@ export const internshipsRouter = createTRPCRouter({
         take: input?.take,
         where: { published: true, approved: true },
         orderBy: { createdAt: "desc" },
+        include: {
+          organization: true,
+          _count: {
+            select: {
+              tasks: true,
+              applications: true,
+            },
+          },
+        },
       });
     }),
 
@@ -94,6 +103,85 @@ export const internshipsRouter = createTRPCRouter({
       }
 
       return []; // interns cannot list all
+    }),
+
+  listForIntern: protectedProcedure
+    .input(
+      z
+        .object({
+          skip: z.number().min(0).default(0),
+          take: z.number().min(1).max(50).default(10),
+        })
+        .optional(),
+    )
+    .query(async ({ input, ctx }) => {
+      const { id, role } = ctx.session.user;
+
+      if (role !== "INTERN") {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Only interns can access this",
+        });
+      }
+
+      const internProfile = await ctx.db.internProfile.findUnique({
+        where: { userId: id },
+        select: { id: true },
+      });
+
+      if (!internProfile) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Intern profile not found",
+        });
+      }
+
+      const internships = await ctx.db.internship.findMany({
+        skip: input?.skip,
+        take: input?.take,
+        where: {
+          OR: [
+            { applications: { some: { internId: internProfile.id } } },
+            { internshipProgress: { some: { internId: internProfile.id } } },
+          ],
+        },
+        orderBy: { createdAt: "desc" },
+        include: {
+          organization: true,
+          internshipProgress: {
+            where: {
+              internId: internProfile.id,
+            },
+          },
+          tasks: {
+            select: {
+              id: true,
+              title: true,
+              taskProgress: {
+                where: { internId: internProfile.id },
+                select: {
+                  status: true,
+                  completedAt: true,
+                },
+              },
+            },
+          },
+          _count: {
+            select: {
+              applications: true,
+              tasks: true,
+            },
+          },
+        },
+      });
+
+      return internships.map((internship) => ({
+        ...internship,
+        internshipProgress:
+          internship.internshipProgress.length > 0
+            ? internship.internshipProgress[0]
+            : null,
+      }));
     }),
 
   byId: publicProcedure
