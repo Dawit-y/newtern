@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { signOut } from "@/lib/auth-client";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { LogOut } from "lucide-react";
 
 // Regular SignOut Button
 export function SignOutButton() {
@@ -49,6 +50,7 @@ export function SignOutDropdownItem() {
         });
       }}
     >
+      <LogOut className="mr-2 h-4 w-4" />
       Sign Out
     </DropdownMenuItem>
   );
