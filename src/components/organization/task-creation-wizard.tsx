@@ -30,7 +30,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { taskSchema } from "@/lib/validation/tasks";
-import { type ResourceType } from "@/lib/validation/resources";
+import { type Resource } from "@/lib/validation/resources";
 
 // Form-specific type that matches the schema exactly
 type TaskFormType = {
@@ -60,7 +60,7 @@ interface TaskCreationWizardProps {
 }
 
 // Local resource type for form state management (without taskId requirement)
-type LocalResource = Omit<ResourceType, "taskId"> & { id: string };
+type LocalResource = Omit<Resource, "taskId"> & { id: string };
 
 const taskSteps = [
   { id: 1, title: "Overview", description: "Task background and context" },
@@ -114,7 +114,7 @@ export default function TaskCreationWizard({
 
   const progress = (currentStep / taskSteps.length) * 100;
 
-  const handleAddResource = (type: ResourceType["type"]) => {
+  const handleAddResource = (type: Resource["type"]) => {
     const newResource: LocalResource = {
       // Generate a unique client-side ID for the array key
       id: crypto.randomUUID(),

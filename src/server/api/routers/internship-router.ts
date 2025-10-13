@@ -101,7 +101,13 @@ export const internshipsRouter = createTRPCRouter({
     .query(async ({ input, ctx }) => {
       const internship = await ctx.db.internship.findUnique({
         where: { id: input },
-        include: { tasks: true },
+        include: {
+          tasks: {
+            include: {
+              resources: true,
+            },
+          },
+        },
       });
 
       if (!internship) {
