@@ -76,6 +76,16 @@ model InternProfile {
   major              String?
   skills             String?
   bio                String?
+  phone              String?
+  linkedin           String?
+  github             String?
+  portfolio          String?
+  location           String?
+  graduationYear     String?
+  gpa                Float?
+  experience         String?
+  resume             String?
+
   applications       Application[]
   taskProgress       TaskProgress[]
   internshipProgress InternshipProgress[]
