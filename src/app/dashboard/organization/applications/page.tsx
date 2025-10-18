@@ -41,12 +41,8 @@ import {
   Calendar,
   FileText,
   Search,
-  Star,
   Download,
   Mail,
-  Phone,
-  MapPin,
-  GraduationCap,
   Clock,
 } from "lucide-react";
 

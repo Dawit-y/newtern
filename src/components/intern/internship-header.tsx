@@ -10,62 +10,34 @@ import {
   Building2,
   Calendar,
   Clock,
-  DollarSign,
+  // DollarSign,
   ExternalLink,
   MapPin,
   Send,
   Target,
   Users,
 } from "lucide-react";
+import type { RouterOutputs } from "@/trpc/react";
 
-interface Mentor {
-  name: string;
-  role: string;
-  avatar?: string;
-}
-
-interface WorkspaceData {
-  startDate: string;
-  endDate: string;
-  tasksCompleted: number;
-  totalTasks: number;
-  progress: number;
-  mentor: Mentor;
-}
-
-interface InternshipData {
-  id: string;
-  title: string;
-  company: string;
-  companyLogo?: string;
-  location?: string;
-  duration?: string;
-  deadline?: string;
-  salary?: string;
-  applicants?: number;
-  skills?: string[];
-  type?: string;
-  status?: "accepted" | "pending" | "rejected" | "not_applied";
-  workspaceData?: WorkspaceData;
-}
+type Internship = RouterOutputs["internships"]["bySlug"];
 
 interface Props {
-  internship: InternshipData;
+  internship: Internship;
   canApply?: boolean;
 }
 
 export default function InternshipHeader({ internship, canApply }: Props) {
-  const isAccepted = internship.status === "accepted";
-  const isPending = internship.status === "pending";
-  const isRejected = internship.status === "rejected";
+  const isAccepted = internship?.userApplication?.status === "ACCEPTED";
+  const isPending = internship?.userApplication?.status === "PENDING";
+  const isRejected = internship?.userApplication?.status === "REJECTED";
 
   const getStatusBadge = () => {
-    switch (internship.status) {
-      case "accepted":
+    switch (internship?.userApplication?.status) {
+      case "ACCEPTED":
         return <Badge variant="default">Accepted</Badge>;
-      case "pending":
+      case "PENDING":
         return <Badge variant="outline">Pending</Badge>;
-      case "rejected":
+      case "REJECTED":
         return <Badge variant="destructive">Rejected</Badge>;
       default:
         return null;
@@ -78,7 +50,7 @@ export default function InternshipHeader({ internship, canApply }: Props) {
         <div className="flex flex-col items-start gap-6 md:flex-row">
           {/* Company Logo */}
           <Avatar className="h-20 w-20 rounded-lg">
-            <AvatarImage src={internship.companyLogo ?? "/placeholder.svg"} />
+            <AvatarImage src={"/placeholder.svg"} />
             <AvatarFallback>
               <Building2 className="h-10 w-10" />
             </AvatarFallback>
@@ -95,7 +67,7 @@ export default function InternshipHeader({ internship, canApply }: Props) {
                 {getStatusBadge()}
               </div>
               <p className="text-muted-foreground text-lg">
-                {internship.company}
+                {internship.organization.organizationName}
               </p>
             </div>
 
@@ -116,52 +88,48 @@ export default function InternshipHeader({ internship, canApply }: Props) {
               {internship.deadline && (
                 <div className="flex items-center gap-2">
                   <Calendar className="text-muted-foreground h-4 w-4" />
-                  <span>Apply by: {internship.deadline}</span>
+                  <span>Apply by: {internship.deadline.toISOString()}</span>
                 </div>
               )}
-              {internship.salary && (
+              {/* {internship.salary && (
                 <div className="flex items-center gap-2">
                   <DollarSign className="text-muted-foreground h-4 w-4" />
                   <span>{internship.salary}</span>
                 </div>
-              )}
-              {internship.applicants !== undefined && (
+              )} */}
+              {internship._count.applications !== undefined && (
                 <div className="flex items-center gap-2">
                   <Users className="text-muted-foreground h-4 w-4" />
-                  <span>{internship.applicants} applicants</span>
+                  <span>{internship._count.applications} applicants</span>
                 </div>
               )}
 
               {/* Accepted Internship Data */}
-              {isAccepted && internship.workspaceData && (
+              {isAccepted && internship.tasks && (
                 <>
                   <div className="flex items-center gap-2">
                     <Calendar className="text-muted-foreground h-4 w-4" />
-                    <span>
+                    {/* <span>
                       {internship.workspaceData.startDate} -{" "}
                       {internship.workspaceData.endDate}
-                    </span>
+                    </span> */}
                   </div>
                   <div className="flex items-center gap-2">
                     <Target className="text-muted-foreground h-4 w-4" />
                     <span>
-                      {internship.workspaceData.tasksCompleted} of{" "}
-                      {internship.workspaceData.totalTasks} tasks completed
+                      {(internship?.progress?.progress ??
+                        0 * internship._count.tasks) / 100}{" "}
+                      of {internship._count.tasks} tasks completed
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Avatar className="h-6 w-6">
-                      <AvatarImage
-                        src={
-                          internship.workspaceData.mentor.avatar ??
-                          "/placeholder.svg"
-                        }
-                      />
+                      <AvatarImage src={"/placeholder.svg"} />
                       <AvatarFallback>M</AvatarFallback>
                     </Avatar>
                     <span>
-                      Mentor: {internship.workspaceData.mentor.name} (
-                      {internship.workspaceData.mentor.role})
+                      Mentor: {internship.organization.user.name} (
+                      {internship.organization.jobTitle})
                     </span>
                   </div>
                 </>
@@ -180,16 +148,16 @@ export default function InternshipHeader({ internship, canApply }: Props) {
             )}
 
             {/* Progress */}
-            {isAccepted && internship.workspaceData && (
+            {isAccepted && internship.progress && (
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="font-medium">Overall Progress</span>
                   <span className="text-muted-foreground">
-                    {internship.workspaceData.progress}%
+                    {internship.progress.progress}%
                   </span>
                 </div>
                 <Progress
-                  value={internship.workspaceData.progress}
+                  value={internship.progress.progress}
                   className="h-2"
                 />
               </div>
@@ -203,7 +171,7 @@ export default function InternshipHeader({ internship, canApply }: Props) {
             {canApply && (
               <Button size="lg" asChild>
                 <Link
-                  href={`/dashboard/intern/internship/${internship.id}/apply`}
+                  href={`/dashboard/intern/internship/${internship.slug}/apply`}
                 >
                   <Send className="mr-2 h-4 w-4" />
                   Apply Now
@@ -224,7 +192,7 @@ export default function InternshipHeader({ internship, canApply }: Props) {
             )}
             <Button size="lg" variant="outline" asChild>
               <Link
-                href={`/company/${internship.company.toLowerCase().replace(/\s+/g, "-")}`}
+                href={`/company/${internship.organization.organizationName.toLowerCase().replace(/\s+/g, "-")}`}
               >
                 <ExternalLink className="mr-2 h-4 w-4" />
                 View Company Profile

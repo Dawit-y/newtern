@@ -2,6 +2,7 @@
 
 import type React from "react";
 
+import { type RouterOutputs } from "@/trpc/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,11 +17,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Upload, LinkIcon, FileText, X, Plus, Loader2 } from "lucide-react";
 
-interface Task {
-  id: number;
-  title: string;
-  submissionType: string[];
-}
+type Internship = RouterOutputs["internships"]["bySlug"];
+type Task = NonNullable<Internship["tasks"]>[number];
 
 interface TaskSubmissionFormProps {
   task: Task;
@@ -29,7 +27,7 @@ interface TaskSubmissionFormProps {
 }
 
 interface SubmissionData {
-  taskId: number;
+  taskId: string;
   files?: File[];
   urls?: string[];
   text?: string;
@@ -106,7 +104,7 @@ export default function TaskSubmissionForm({
 
         <div className="space-y-6 py-4">
           {/* File Upload */}
-          {task.submissionType.includes("file") && (
+          {task.submitAsFile && (
             <div className="space-y-3">
               <Label className="flex items-center gap-2">
                 <Upload className="h-4 w-4" />
@@ -165,7 +163,7 @@ export default function TaskSubmissionForm({
           )}
 
           {/* URL Links */}
-          {task.submissionType.includes("url") && (
+          {task.submitAsUrl && (
             <div className="space-y-3">
               <Label className="flex items-center gap-2">
                 <LinkIcon className="h-4 w-4" />
@@ -205,7 +203,7 @@ export default function TaskSubmissionForm({
           )}
 
           {/* Text Submission */}
-          {task.submissionType.includes("text") && (
+          {task.submitAsText && (
             <div className="space-y-3">
               <Label className="flex items-center gap-2">
                 <FileText className="h-4 w-4" />

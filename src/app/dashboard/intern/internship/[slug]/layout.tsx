@@ -2,34 +2,30 @@ import InternshipHeader from "@/components/intern/internship-header";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { api } from "@/trpc/server";
+import { TRPCError } from "@trpc/server";
+import { notFound } from "next/navigation";
 
-export default function InternshipLayout({
+export default async function InternshipLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: Promise<{ slug: string }>;
 }) {
-  const internship = {
-    id: "1",
-    title: "Frontend Developer Intern",
-    company: "Afroel Tech",
-    companyLogo: "/company-logo.png",
-    type: "Remote",
-    location: "Addis Ababa",
-    duration: "3 months",
-    deadline: "Nov 30, 2025",
-    salary: "$300/month",
-    applicants: 42,
-    skills: ["React", "Next.js", "TypeScript"],
-    status: "accepted" as "accepted" | "pending" | "rejected" | "not_applied", // or pending, rejected, not_applied
-    workspaceData: {
-      startDate: "Oct 1, 2025",
-      endDate: "Dec 31, 2025",
-      tasksCompleted: 7,
-      totalTasks: 10,
-      progress: 70,
-      mentor: { name: "John Doe", role: "Tech Lead", avatar: "" },
-    },
-  };
+  const { slug } = await params;
+
+  let internship;
+
+  try {
+    internship = await api.internships.bySlug(slug);
+  } catch (err) {
+    if (err instanceof TRPCError && err.code === "NOT_FOUND") {
+      notFound();
+    }
+
+    throw err;
+  }
 
   return (
     <main className="from-background to-muted/20 flex-1 bg-gradient-to-b">
@@ -40,6 +36,7 @@ export default function InternshipLayout({
             Back to Dashboard
           </Button>
         </Link>
+
         <InternshipHeader internship={internship} canApply />
         <div className="container">{children}</div>
       </div>

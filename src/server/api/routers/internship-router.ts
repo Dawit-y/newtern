@@ -4,6 +4,8 @@ import {
   publicProcedure,
 } from "@/server/api/trpc";
 import { internshipSchema } from "@/lib/validation/internships";
+import { type TaskStatus } from "@/lib/validation/progress";
+import { type ApplicationStatus } from "@/lib/validation/applications";
 import { z } from "zod";
 import { generateSlug } from "@/utils/common-methods";
 import { TRPCError } from "@trpc/server";
@@ -208,6 +210,148 @@ export const internshipsRouter = createTRPCRouter({
       return internship;
     }),
 
+  bySlug: publicProcedure
+    .input(z.string())
+    .query(async ({ input: slug, ctx }) => {
+      // --- Get the intern profile if logged in as INTERN ---
+      let internProfileId: string | null = null;
+      if (ctx.session?.user?.role === "INTERN") {
+        const internProfile = await ctx.db.internProfile.findUnique({
+          where: { userId: ctx.session.user.id },
+          select: { id: true },
+        });
+        internProfileId = internProfile?.id ?? null;
+      }
+
+      const internship = await ctx.db.internship.findUnique({
+        where: { slug },
+        include: {
+          organization: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+          tasks: {
+            include: {
+              resources: true,
+            },
+          },
+          _count: {
+            select: {
+              applications: true,
+              tasks: true,
+            },
+          },
+        },
+      });
+
+      if (!internship) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Internship not found",
+        });
+      }
+
+      // --- Fetch user application info ---
+      let userApplication: null | {
+        id: string;
+        status: ApplicationStatus;
+        createdAt: Date;
+      } = null;
+
+      if (internProfileId) {
+        userApplication = await ctx.db.application.findFirst({
+          where: {
+            internshipId: internship.id,
+            internId: internProfileId,
+          },
+          select: {
+            id: true,
+            status: true,
+            createdAt: true,
+          },
+        });
+      }
+
+      // --- Fetch internship progress (if intern is accepted) ---
+      let internshipProgress: null | {
+        id: string;
+        progress: number;
+        status: string;
+        startedAt: Date;
+        completedAt: Date | null;
+      } = null;
+
+      if (internProfileId && userApplication?.status === "ACCEPTED") {
+        internshipProgress = await ctx.db.internshipProgress.findUnique({
+          where: {
+            internId_internshipId: {
+              internId: internProfileId,
+              internshipId: internship.id,
+            },
+          },
+          select: {
+            id: true,
+            progress: true,
+            status: true,
+            startedAt: true,
+            completedAt: true,
+          },
+        });
+      }
+
+      type TaskWithProgress = (typeof internship.tasks)[number] & {
+        progress: {
+          status: TaskStatus;
+          startedAt: Date | null;
+          completedAt: Date | null;
+        };
+      };
+
+      // --- If logged in as intern, attach task progress ---
+      let tasksWithProgress: TaskWithProgress[] | null = null;
+      if (internProfileId) {
+        const progressRecords = await ctx.db.taskProgress.findMany({
+          where: {
+            internId: internProfileId,
+            taskId: { in: internship.tasks.map((t) => t.id) },
+          },
+          select: {
+            taskId: true,
+            status: true,
+            startedAt: true,
+            completedAt: true,
+          },
+        });
+
+        const progressMap = Object.fromEntries(
+          progressRecords.map((p) => [p.taskId, p]),
+        );
+
+        tasksWithProgress = internship.tasks.map((task) => ({
+          ...task,
+          progress: progressMap[task.id] ?? {
+            status: "NOT_STARTED",
+            startedAt: null,
+            completedAt: null,
+          },
+        }));
+      }
+
+      // --- Return the enhanced internship ---
+      return {
+        ...internship,
+        tasks: tasksWithProgress,
+        userApplication,
+        progress: internshipProgress,
+      };
+    }),
+
   byOrganizationId: protectedProcedure
     .input(z.string().cuid())
     .query(async ({ input, ctx }) => {
@@ -282,6 +426,7 @@ export const internshipsRouter = createTRPCRouter({
         where: { id: input },
       });
     }),
+  
   publish: protectedProcedure
     .input(
       z.object({

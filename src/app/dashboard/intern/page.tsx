@@ -208,7 +208,7 @@ export default function InternDashboard() {
                             className="w-50"
                             onClick={() =>
                               router.push(
-                                `/dashboard/intern/internship/${internship.id}/apply`,
+                                `/dashboard/intern/internship/${internship.slug}/apply`,
                               )
                             }
                           >
@@ -218,7 +218,7 @@ export default function InternDashboard() {
                             variant="outline"
                             onClick={() =>
                               router.push(
-                                `/dashboard/intern/internship/${internship.id}/`,
+                                `/dashboard/intern/internship/${internship.slug}/`,
                               )
                             }
                           >

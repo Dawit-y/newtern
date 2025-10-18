@@ -110,7 +110,7 @@ export const applicationRouter = createTRPCRouter({
       }
       if (ctx.session.user.role === "ORGANIZATION") {
         await assertOrgOwnsInternship(ctx, {
-          organizationId: application.internshipId,
+          internshipId: application.internshipId,
         });
       }
       return ctx.db.application.update({
