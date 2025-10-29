@@ -3,23 +3,48 @@ import {
   getOrgProfileOrThrow,
   getInternProfileOrThrow,
 } from "@/server/lib/helpers/org";
+import { TRPCError } from "@trpc/server";
 
 export const profilesRouter = createTRPCRouter({
   getCurrentProfile: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
     const userRole = ctx.session.user.role;
 
+    const user = await ctx.db.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        email: true,
+        name: true,
+        role: true,
+      },
+    });
+
+    if (!user) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "User not found",
+      });
+    }
+
     try {
       if (userRole === "ORGANIZATION") {
         const orgProfile = await getOrgProfileOrThrow(ctx.db, userId);
         return {
           type: "organization" as const,
+          user: {
+            ...user,
+          },
           ...orgProfile,
         };
       } else if (userRole === "INTERN") {
         const internProfile = await getInternProfileOrThrow(ctx.db, userId);
         return {
           type: "intern" as const,
+          user: {
+            ...user,
+          },
           ...internProfile,
         };
       }

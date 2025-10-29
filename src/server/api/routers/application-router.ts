@@ -17,7 +17,7 @@ export const applicationRouter = createTRPCRouter({
   create: protectedProcedure
     .input(applicationSchema.omit({ status: true }))
     .mutation(async ({ input, ctx }) => {
-      assertNotIntern(ctx);
+      // Allow interns to create applications
       return ctx.db.application.create({
         data: {
           ...input,

@@ -18,15 +18,17 @@ import {
   Users,
 } from "lucide-react";
 import type { RouterOutputs } from "@/trpc/react";
+import { usePathname } from "next/navigation";
 
 type Internship = RouterOutputs["internships"]["bySlug"];
 
 interface Props {
   internship: Internship;
-  canApply?: boolean;
 }
 
-export default function InternshipHeader({ internship, canApply }: Props) {
+export default function InternshipHeader({ internship }: Props) {
+  const pathname = usePathname();
+  const canApply = !pathname.endsWith("/apply");
   const isAccepted = internship?.userApplication?.status === "ACCEPTED";
   const isPending = internship?.userApplication?.status === "PENDING";
   const isRejected = internship?.userApplication?.status === "REJECTED";

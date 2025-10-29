@@ -37,7 +37,7 @@ export default async function InternshipLayout({
           </Button>
         </Link>
 
-        <InternshipHeader internship={internship} canApply />
+        <InternshipHeader internship={internship} />
         <div className="container">{children}</div>
       </div>
     </main>

@@ -3,6 +3,9 @@
 import type React from "react";
 
 import { useState } from "react";
+import { useParams } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { api } from "@/trpc/react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,12 +14,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import ApplicationStatusCard from "@/components/intern/application-status-card";
 import {
   ArrowLeft,
   CheckCircle,
@@ -25,241 +28,381 @@ import {
   Phone,
   MapPinned,
   Send,
+  FileText,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
-// Mock internship data
-const internshipData = {
-  id: 1,
-  title: "Frontend Developer Intern",
-  company: "TechStart Inc.",
-  location: "Remote",
-  type: "Paid",
-  duration: "3 months",
-  deadline: "Dec 15, 2024",
-  description:
-    "Work on real-world React projects and build modern web applications. You'll be part of our frontend team, contributing to our main product and learning from experienced developers.",
-  skills: ["React", "TypeScript", "CSS", "JavaScript"],
-  tasks: 5,
-  applicants: 23,
-};
-
-// Mock user profile data (would come from database/auth)
-const userProfile = {
-  firstName: "John",
-  lastName: "Doe",
-  email: "john.doe@email.com",
-  phone: "+1 (555) 123-4567",
-  location: "San Francisco, CA",
-  university: "Stanford University",
-  major: "Computer Science",
-  graduationYear: "2025",
-  gpa: "3.8",
-  skills: ["React", "TypeScript", "Node.js", "Python", "CSS"],
-  resumeUrl: "/resume/john-doe-resume.pdf",
-  portfolioUrl: "https://johndoe.dev",
-  linkedinUrl: "https://linkedin.com/in/johndoe",
-  githubUrl: "https://github.com/johndoe",
-};
+interface ApplicationFormData {
+  coverLetterFile: FileList;
+  resumeFile?: FileList;
+  availability: string;
+}
 
 export default function ApplyPage() {
-  const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    coverLetter: "",
-    whyInterested: "",
-    relevantExperience: "",
-    availability: "",
-    portfolioLinks: "",
-    additionalInfo: "",
-  });
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    watch,
+  } = useForm<ApplicationFormData>();
+  const { slug } = useParams();
+  const { data: profile } = api.profiles.getCurrentProfile.useQuery();
+  const { data: internship } = api.internships.bySlug.useQuery(slug as string);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    console.log("Application submitted:", {
-      ...formData,
-      profile: userProfile,
-    });
-    router.push("/dashboard/intern?applicationSubmitted=true");
+  const createApplication = api.applications.create.useMutation();
+  const router = useRouter();
+
+  const [selectedCoverLetterFile, setSelectedCoverLetterFile] =
+    useState<File | null>(null);
+  const [selectedResumeFile, setSelectedResumeFile] = useState<File | null>(
+    null,
+  );
+  const [isUploading, setIsUploading] = useState(false);
+
+  if (!profile || profile.type !== "intern") {
+    return <div>Not an intern profile</div>;
+  }
+
+  const hasProfileResume = !!profile.resume;
+
+  const uploadFile = async (
+    file: File,
+    type: "cover-letter" | "resume",
+  ): Promise<string | null> => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", type);
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = (await response.json()) as { error?: string };
+        throw new Error(error.error ?? "Upload failed");
+      }
+
+      const result = (await response.json()) as { filePath: string };
+      return result.filePath;
+    } catch (error) {
+      console.error("File upload error:", error);
+      return null;
+    }
   };
 
-  const isFormValid =
-    formData.coverLetter && formData.whyInterested && formData.availability;
+  const onSubmit = async (data: ApplicationFormData) => {
+    if (!internship) {
+      console.error("No internship data available");
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      let coverLetterPath: string | null = null;
+      let resumePath: string | null = null;
+
+      // Upload cover letter if provided
+      if (data.coverLetterFile[0]) {
+        coverLetterPath = await uploadFile(
+          data.coverLetterFile[0],
+          "cover-letter",
+        );
+        if (!coverLetterPath) {
+          throw new Error("Failed to upload cover letter");
+        }
+      }
+
+      // Upload resume if provided
+      if (data.resumeFile?.[0]) {
+        resumePath = await uploadFile(data.resumeFile[0], "resume");
+        if (!resumePath) {
+          throw new Error("Failed to upload resume");
+        }
+      }
+
+      // Prepare the application data
+      const applicationData = {
+        internId: profile.id,
+        internshipId: internship.id,
+        availability: data.availability,
+        coverLetter: coverLetterPath,
+        resume: resumePath,
+      };
+
+      // Call the mutation with the proper data structure
+      await createApplication.mutateAsync(applicationData);
+
+      // Redirect on success
+      router.push("/dashboard/intern");
+    } catch (error) {
+      console.error("Failed to submit application:", error);
+      toast.error("Failed to submit application")
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleCoverLetterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    setSelectedCoverLetterFile(file);
+  };
+
+  const handleResumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    setSelectedResumeFile(file);
+  };
+
+  const isFormValid = watch("coverLetterFile")?.[0] && watch("availability");
 
   return (
-    <>
-      <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
-        {/* Profile Summary Sidebar */}
-        <div className="lg:col-span-1">
-          <Card className="sticky top-24">
-            <CardHeader>
-              <CardTitle className="text-lg">Your Profile</CardTitle>
-              <CardDescription>Information from your profile</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-12 w-12">
-                  <AvatarFallback>
-                    {userProfile.firstName[0]}
-                    {userProfile.lastName[0]}
-                  </AvatarFallback>
-                </Avatar>
+    <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
+      {/* Profile Summary Sidebar */}
+      <div className="lg:col-span-1">
+        <Card className="sticky top-24">
+          <CardHeader>
+            <CardTitle className="text-lg">Your Profile</CardTitle>
+            <CardDescription>Information from your profile</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Avatar className="h-12 w-12">
+                <AvatarFallback>
+                  {profile.firstName[0]}
+                  {profile.lastName[0]}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <div className="font-semibold">
+                  {profile.firstName} {profile.lastName}
+                </div>
+                <div className="text-muted-foreground text-xs">
+                  {profile.user.email}
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-3 text-sm">
+              <div className="flex items-start gap-2">
+                <Mail className="text-muted-foreground mt-0.5 h-4 w-4" />
                 <div>
-                  <div className="font-semibold">
-                    {userProfile.firstName} {userProfile.lastName}
-                  </div>
+                  <div className="text-muted-foreground text-xs">Email</div>
+                  <div>{profile.user.email}</div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2">
+                <Phone className="text-muted-foreground mt-0.5 h-4 w-4" />
+                <div>
+                  <div className="text-muted-foreground text-xs">Phone</div>
+                  <div>{profile.phone}</div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2">
+                <MapPinned className="text-muted-foreground mt-0.5 h-4 w-4" />
+                <div>
+                  <div className="text-muted-foreground text-xs">Location</div>
+                  <div>{profile.location}</div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2">
+                <GraduationCap className="text-muted-foreground mt-0.5 h-4 w-4" />
+                <div>
+                  <div className="text-muted-foreground text-xs">Education</div>
+                  <div>{profile.university}</div>
                   <div className="text-muted-foreground text-xs">
-                    {userProfile.email}
+                    {profile.major} • {profile.graduationYear}
                   </div>
                 </div>
               </div>
+            </div>
 
-              <Separator />
+            <Separator />
 
-              <div className="space-y-3 text-sm">
-                <div className="flex items-start gap-2">
-                  <Mail className="text-muted-foreground mt-0.5 h-4 w-4" />
-                  <div>
-                    <div className="text-muted-foreground text-xs">Email</div>
-                    <div>{userProfile.email}</div>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-2">
-                  <Phone className="text-muted-foreground mt-0.5 h-4 w-4" />
-                  <div>
-                    <div className="text-muted-foreground text-xs">Phone</div>
-                    <div>{userProfile.phone}</div>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-2">
-                  <MapPinned className="text-muted-foreground mt-0.5 h-4 w-4" />
-                  <div>
-                    <div className="text-muted-foreground text-xs">
-                      Location
-                    </div>
-                    <div>{userProfile.location}</div>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-2">
-                  <GraduationCap className="text-muted-foreground mt-0.5 h-4 w-4" />
-                  <div>
-                    <div className="text-muted-foreground text-xs">
-                      Education
-                    </div>
-                    <div>{userProfile.university}</div>
-                    <div className="text-muted-foreground text-xs">
-                      {userProfile.major} • {userProfile.graduationYear}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
-
+            {Array.isArray(profile?.skills) && profile.skills.length > 0 && (
               <div>
                 <div className="text-muted-foreground mb-2 text-xs">Skills</div>
                 <div className="flex flex-wrap gap-1">
-                  {userProfile.skills.map((skill) => (
-                    <Badge key={skill} variant="secondary" className="text-xs">
+                  {profile.skills.map((skill, idx) => (
+                    <Badge key={idx} variant="secondary" className="text-xs">
                       {skill}
                     </Badge>
                   ))}
                 </div>
               </div>
+            )}
 
-              <Separator />
+            <Separator />
 
-              <div className="text-muted-foreground text-xs">
-                <Link
-                  href="/dashboard/intern/profile"
-                  className="text-primary hover:underline"
-                >
-                  Edit profile information
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
+            <div className="text-muted-foreground text-xs">
+              <Link
+                href="/dashboard/intern/profile"
+                className="text-primary hover:underline"
+              >
+                Edit profile information
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      {internship?.userApplication ? (
+        <div className="lg:col-span-2">
+          <ApplicationStatusCard
+            status={internship.userApplication.status}
+            internshipSlug={internship.slug}
+          />
         </div>
-
-        {/* Application Form */}
+      ) : (
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>
               <CardTitle>Application Form</CardTitle>
               <CardDescription>
-                Tell us why you&apos;re interested in this specific internship
+                Apply for {internship?.title} at{" "}
+                {internship?.organization.organizationName}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Cover Letter */}
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                {/* Cover Letter File Upload */}
                 <div className="space-y-2">
-                  <Label htmlFor="coverLetter">
+                  <Label htmlFor="coverLetterFile">
                     Cover Letter <span className="text-destructive">*</span>
                   </Label>
-                  <Textarea
-                    id="coverLetter"
-                    placeholder="Introduce yourself and explain why you're applying for this internship. Highlight what makes you a great fit for this role..."
-                    className="min-h-[180px]"
-                    value={formData.coverLetter}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        coverLetter: e.target.value,
-                      })
-                    }
-                    required
-                  />
+                  <div className="flex items-center gap-4">
+                    <Input
+                      id="coverLetterFile"
+                      type="file"
+                      accept=".pdf,.doc,.docx,.txt"
+                      {...register("coverLetterFile", {
+                        required: "Cover letter is required",
+                        validate: {
+                          fileType: (files) => {
+                            if (!files?.[0]) return "Cover letter is required";
+                            const allowedTypes = [
+                              "application/pdf",
+                              "application/msword",
+                              "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                              "text/plain",
+                            ];
+                            const file = files[0];
+                            if (!allowedTypes.includes(file.type)) {
+                              return "Please upload a PDF, DOC, DOCX, or TXT file";
+                            }
+                            return true;
+                          },
+                          fileSize: (files) => {
+                            if (!files?.[0]) return true;
+                            const file = files[0];
+                            if (file.size > 5 * 1024 * 1024) {
+                              // 5MB
+                              return "File size must be less than 5MB";
+                            }
+                            return true;
+                          },
+                        },
+                      })}
+                      onChange={handleCoverLetterChange}
+                      className="flex-1"
+                    />
+                    {selectedCoverLetterFile && (
+                      <div className="flex items-center gap-2 text-sm text-green-600">
+                        <FileText className="h-4 w-4" />
+                        {selectedCoverLetterFile.name}
+                      </div>
+                    )}
+                  </div>
+                  {errors.coverLetterFile && (
+                    <p className="text-destructive text-xs">
+                      {errors.coverLetterFile.message}
+                    </p>
+                  )}
                   <p className="text-muted-foreground text-xs">
-                    {formData.coverLetter.length} characters
+                    PDF, DOC, DOCX, or TXT files accepted (max 5MB)
                   </p>
                 </div>
 
-                {/* Why Interested */}
+                {/* Resume File Upload */}
                 <div className="space-y-2">
-                  <Label htmlFor="whyInterested">
-                    Why are you interested in this internship?{" "}
-                    <span className="text-destructive">*</span>
+                  <Label htmlFor="resumeFile">
+                    Resume{" "}
+                    {!hasProfileResume && (
+                      <span className="text-destructive">*</span>
+                    )}
                   </Label>
-                  <Textarea
-                    id="whyInterested"
-                    placeholder="What specific aspects of this internship excite you? How does it align with your career goals?"
-                    className="min-h-[120px]"
-                    value={formData.whyInterested}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        whyInterested: e.target.value,
-                      })
-                    }
-                    required
-                  />
-                </div>
-
-                {/* Relevant Experience */}
-                <div className="space-y-2">
-                  <Label htmlFor="relevantExperience">
-                    Relevant Experience (Optional)
-                  </Label>
-                  <Textarea
-                    id="relevantExperience"
-                    placeholder="Describe any projects, coursework, or experience relevant to this specific internship..."
-                    className="min-h-[120px]"
-                    value={formData.relevantExperience}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        relevantExperience: e.target.value,
-                      })
-                    }
-                  />
+                  <div className="flex items-center gap-4">
+                    <Input
+                      id="resumeFile"
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      {...register("resumeFile", {
+                        required: !hasProfileResume
+                          ? "Resume is required"
+                          : false,
+                        validate: {
+                          fileType: (files) => {
+                            if (!files?.[0]) {
+                              if (!hasProfileResume)
+                                return "Resume is required";
+                              return true;
+                            }
+                            const allowedTypes = [
+                              "application/pdf",
+                              "application/msword",
+                              "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                            ];
+                            const file = files[0];
+                            if (!allowedTypes.includes(file.type)) {
+                              return "Please upload a PDF, DOC, or DOCX file";
+                            }
+                            return true;
+                          },
+                          fileSize: (files) => {
+                            if (!files?.[0]) return true;
+                            const file = files[0];
+                            if (file.size > 5 * 1024 * 1024) {
+                              // 5MB
+                              return "File size must be less than 5MB";
+                            }
+                            return true;
+                          },
+                        },
+                      })}
+                      onChange={handleResumeChange}
+                      className="flex-1"
+                    />
+                    {selectedResumeFile && (
+                      <div className="flex items-center gap-2 text-sm text-green-600">
+                        <FileText className="h-4 w-4" />
+                        {selectedResumeFile.name}
+                      </div>
+                    )}
+                  </div>
+                  {errors.resumeFile && (
+                    <p className="text-destructive text-xs">
+                      {errors.resumeFile.message}
+                    </p>
+                  )}
+                  <p className="text-muted-foreground text-xs">
+                    PDF, DOC, or DOCX files accepted (max 5MB)
+                  </p>
+                  {!hasProfileResume && (
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950">
+                      <p className="text-sm text-amber-800 dark:text-amber-200">
+                        <strong>Notice:</strong> You haven&apos;t attached a
+                        resume to your profile. Please upload your resume to
+                        complete your application.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Availability */}
@@ -270,60 +413,22 @@ export default function ApplyPage() {
                   <Input
                     id="availability"
                     placeholder="e.g., Immediately, January 2025, After Finals (May 2025)"
-                    value={formData.availability}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        availability: e.target.value,
-                      })
-                    }
-                    required
+                    {...register("availability", {
+                      required: "Availability is required",
+                      minLength: {
+                        value: 2,
+                        message: "Availability must be at least 2 characters",
+                      },
+                    })}
                   />
+                  {errors.availability && (
+                    <p className="text-destructive text-xs">
+                      {errors.availability.message}
+                    </p>
+                  )}
                   <p className="text-muted-foreground text-xs">
                     When can you start this internship?
                   </p>
-                </div>
-
-                {/* Portfolio Links */}
-                <div className="space-y-2">
-                  <Label htmlFor="portfolioLinks">
-                    Relevant Portfolio Links (Optional)
-                  </Label>
-                  <Textarea
-                    id="portfolioLinks"
-                    placeholder="Share links to projects, GitHub repos, or work samples relevant to this internship (one per line)"
-                    className="min-h-[100px]"
-                    value={formData.portfolioLinks}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        portfolioLinks: e.target.value,
-                      })
-                    }
-                  />
-                  <p className="text-muted-foreground text-xs">
-                    Your main portfolio/GitHub from profile will be
-                    automatically included
-                  </p>
-                </div>
-
-                {/* Additional Information */}
-                <div className="space-y-2">
-                  <Label htmlFor="additionalInfo">
-                    Additional Information (Optional)
-                  </Label>
-                  <Textarea
-                    id="additionalInfo"
-                    placeholder="Anything else you'd like the organization to know?"
-                    className="min-h-[100px]"
-                    value={formData.additionalInfo}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        additionalInfo: e.target.value,
-                      })
-                    }
-                  />
                 </div>
 
                 {/* Info Box */}
@@ -336,7 +441,7 @@ export default function ApplyPage() {
                       </p>
                       <p className="text-blue-800 dark:text-blue-200">
                         We&apos;ll automatically include your contact details,
-                        education, skills, resume, and profile links with this
+                        education, skills, and profile information with this
                         application.
                       </p>
                     </div>
@@ -348,7 +453,7 @@ export default function ApplyPage() {
                 {/* Submit Button */}
                 <div className="flex items-center justify-between pt-4">
                   <Link
-                    href={`/dashboard/intern/internship/${internshipData.id}`}
+                    href={`/dashboard/intern/internship/${internship?.slug}`}
                   >
                     <Button variant="outline" type="button">
                       <ArrowLeft className="mr-2 h-4 w-4" />
@@ -358,12 +463,21 @@ export default function ApplyPage() {
 
                   <Button
                     type="submit"
-                    disabled={!isFormValid || isSubmitting}
+                    disabled={
+                      !isFormValid ||
+                      isSubmitting ||
+                      createApplication.isPending ||
+                      isUploading
+                    }
                     size="lg"
                   >
-                    {isSubmitting ? (
+                    {isSubmitting ||
+                    createApplication.isPending ||
+                    isUploading ? (
                       <>
-                        <span className="mr-2">Submitting...</span>
+                        <span className="mr-2">
+                          {isUploading ? "Uploading files..." : "Submitting..."}
+                        </span>
                       </>
                     ) : (
                       <>
@@ -377,7 +491,7 @@ export default function ApplyPage() {
             </CardContent>
           </Card>
         </div>
-      </div>
-    </>
+      )}
+    </div>
   );
 }
