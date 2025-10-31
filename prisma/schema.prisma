@@ -70,21 +70,21 @@ model InternProfile {
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  firstName          String
-  lastName           String
-  university         String
-  major              String?
-  skills             String?
-  bio                String?
-  phone              String?
-  linkedin           String?
-  github             String?
-  portfolio          String?
-  location           String?
-  graduationYear     String?
-  gpa                Float?
-  experience         String?
-  resume             String?
+  firstName      String
+  lastName       String
+  university     String
+  major          String?
+  skills         String?
+  bio            String?
+  phone          String?
+  linkedin       String?
+  github         String?
+  portfolio      String?
+  location       String?
+  graduationYear String?
+  gpa            Float?
+  experience     String?
+  resume         String?
 
   applications       Application[]
   taskProgress       TaskProgress[]
@@ -137,6 +137,9 @@ model Internship {
   description  String
   duration     String
   type         InternshipType
+  amount       Int?
+  rating       Int?
+  feedback     String?
   location     String
   requirements String?
   deadline     DateTime
@@ -211,17 +214,17 @@ enum ApplicationStatus {
 }
 
 model Application {
-  id            String            @id @default(cuid())
-  internId      String
-  intern        InternProfile     @relation(fields: [internId], references: [id], onDelete: Cascade)
-  internshipId  String
-  internship    Internship        @relation(fields: [internshipId], references: [id], onDelete: Cascade)
-  coverLetter   String?
-  resume        String?
-  availability  String?
-  status        ApplicationStatus @default(PENDING)
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  id           String            @id @default(cuid())
+  internId     String
+  intern       InternProfile     @relation(fields: [internId], references: [id], onDelete: Cascade)
+  internshipId String
+  internship   Internship        @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  coverLetter  String?
+  resume       String?
+  availability String?
+  status       ApplicationStatus @default(PENDING)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
 
   @@unique([internId, internshipId])
   @@map("applications")

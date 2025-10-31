@@ -9,6 +9,9 @@ export const internshipSchema = z.object({
   type: internshipTypeEnum.refine((val) => !!val, {
     message: "Type is required",
   }),
+  amount: z.number().optional(),
+  rating: z.number().optional(),
+  feedback: z.string().optional(),
   location: z.string().min(1, "Location is required"),
   requirements: z.string().min(1, "Requirements is required"),
   deadline: z.coerce.date().min(new Date(), "Deadline must be in the future"),

@@ -1,16 +1,13 @@
 import "@/styles/globals.css";
 
 import { type Metadata } from "next";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 
 import Footer from "@/components/layout/footer";
 import Navbar from "@/components/layout/nav-bar";
 
 export const metadata: Metadata = {
-  title: "Newtern | Intern",
-  description: "Virtual Internships Platform - Intern",
+  title: "Newtern",
+  description: "Virtual Internships Platform",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
@@ -20,25 +17,14 @@ const navLinks = [
   { href: "#achievements", label: "Achievements" },
 ];
 
-
-export default async function InternLayout({
+export default function InternshipsLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-  if (!session) {
-    redirect("/");
-  }
-  if (session.user.role !== "INTERN") {
-    redirect("/");
-  }
-
   return (
     <>
       <div className="flex min-h-screen flex-col">
         <Navbar links={navLinks} />
-        {children}
+        <div className="mx-6">{children}</div>
         <Footer />
       </div>
     </>

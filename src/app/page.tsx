@@ -59,9 +59,10 @@ export default async function HomePage() {
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                  <Button size="lg" className="h-12 px-8">
-                    Find Internships
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                  <Button size="lg" className="h-12 px-8" asChild>
+                    <Link href={"/internships"}>
+                      Find Internships <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
                   </Button>
                   <Button variant="outline" size="lg" className="h-12 px-8">
                     Post Internships
@@ -80,7 +81,7 @@ export default async function HomePage() {
               </div>
               <div className="flex items-center justify-center">
                 <Image
-                  src="/virtual-internship-dashboard.png"
+                  src="/hero-section-image.png"
                   width="600"
                   height="600"
                   alt="Newtern Platform Dashboard"

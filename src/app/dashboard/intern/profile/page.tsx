@@ -60,6 +60,7 @@ export default function InternProfilePage() {
 
   const [newSkill, setNewSkill] = useState("");
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  console.log("resumeFile", resumeFile);
 
   const handleInputChange = (field: string, value: string | number) => {
     setProfile({ ...profile, [field]: value });

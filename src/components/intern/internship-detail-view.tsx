@@ -243,7 +243,7 @@ export default function InternshipDetailView({
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Lightbulb className="h-5 w-5" />
-                    What You'll Learn
+                    What You&apos;ll Learn
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -272,7 +272,7 @@ export default function InternshipDetailView({
                 Your Responsibilities
               </CardTitle>
               <CardDescription>
-                What you'll be working on during this internship
+                What you&apos;ll be working on during this internship
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -300,7 +300,7 @@ export default function InternshipDetailView({
                 Requirements & Qualifications
               </CardTitle>
               <CardDescription>
-                What we're looking for in candidates
+                What we&apos;re looking for in candidates
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -463,7 +463,8 @@ export default function InternshipDetailView({
                     <span className="text-foreground font-semibold">
                       {internship.deadline}
                     </span>
-                    . Don't miss your chance to join this amazing opportunity!
+                    . Don&apos;t miss your chance to join this amazing
+                    opportunity!
                   </p>
                   {canApply && (
                     <Button asChild>
