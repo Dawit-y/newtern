@@ -252,9 +252,9 @@ export default function ReviewStep({ internshipId }: ReviewStepProps) {
 
                   {/* Resources */}
                   <TabsContent value="resources" className="mt-6 space-y-4">
-                    {selectedTask?.resources?.length > 0 ? (
+                    {selectedTask?.resources?.length ? (
                       <div className="space-y-3">
-                        {selectedTask?.resources.map((resource) => (
+                        {selectedTask.resources.map((resource) => (
                           <div
                             key={resource.id}
                             className="hover:bg-muted/50 flex items-center justify-between rounded-lg border p-4 transition"

@@ -51,7 +51,6 @@ export default function NavBar({ links = [] }: HeaderProps) {
   }
 
   // Determine dashboard path safely
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const role = session?.user?.role;
   let dashboardPath = "/dashboard";
   if (role === "ADMIN") dashboardPath = "/dashboard/admin";

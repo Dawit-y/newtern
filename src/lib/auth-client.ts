@@ -1,9 +1,9 @@
+import { inferAdditionalFields } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
+import type { auth } from "./auth";
 
-// Create a SINGLE client instance and export its helpers.
-// Use same-origin by default so auth cookies are scoped correctly.
 export const authClient = createAuthClient({
-  baseURL: typeof window === "undefined" ? process.env.NEXT_PUBLIC_APP_URL : "",
+  plugins: [inferAdditionalFields<typeof auth>()],
 });
 
 export const { signIn, signUp, useSession, signOut, getSession } = authClient;

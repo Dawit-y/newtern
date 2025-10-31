@@ -2,7 +2,12 @@
 
 import * as React from "react";
 import { ChevronDownIcon } from "lucide-react";
-import { Controller, type Control } from "react-hook-form";
+import {
+  Controller,
+  type Control,
+  type FieldPath,
+  type FieldValues,
+} from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -13,19 +18,31 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-interface DatePickerProps {
-  control: Control; // from useForm
-  name: string; // field name
-  label?: string; // optional label
-  placeholder?: string; // optional placeholder text
+type DatePickerProps<TFieldValues extends FieldValues = FieldValues> = {
+  control: Control<TFieldValues>;
+  name: FieldPath<TFieldValues>;
+  label?: string;
+  placeholder?: string;
+};
+
+// Helper: safely parse stored value into Date
+function parseDate(value: unknown): Date | undefined {
+  if (value instanceof Date && !isNaN(value.getTime())) {
+    return value;
+  }
+  if (typeof value === "string") {
+    const date = new Date(value);
+    return !isNaN(date.getTime()) ? date : undefined;
+  }
+  return undefined;
 }
 
-export function DatePicker({
+export function DatePicker<TFieldValues extends FieldValues = FieldValues>({
   control,
   name,
   label = "Select date",
   placeholder = "Pick a date",
-}: DatePickerProps) {
+}: DatePickerProps<TFieldValues>) {
   const [open, setOpen] = React.useState(false);
 
   return (
@@ -41,6 +58,8 @@ export function DatePicker({
         name={name}
         render={({ field }) => {
           const { value, onChange } = field;
+          const selectedDate = parseDate(value);
+
           return (
             <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
@@ -49,10 +68,13 @@ export function DatePicker({
                   id={name}
                   className="w-48 justify-between font-normal"
                 >
-                  {value ? new Date(value).toLocaleDateString() : placeholder}
-                  <ChevronDownIcon />
+                  {selectedDate
+                    ? selectedDate.toLocaleDateString()
+                    : placeholder}
+                  <ChevronDownIcon className="ml-2 h-4 w-4 opacity-50" />
                 </Button>
               </PopoverTrigger>
+
               <PopoverContent
                 className="w-auto overflow-hidden p-0"
                 align="start"
@@ -60,9 +82,9 @@ export function DatePicker({
                 <Calendar
                   mode="single"
                   captionLayout="dropdown"
-                  selected={value ? new Date(value) : undefined}
+                  selected={selectedDate}
                   onSelect={(date) => {
-                    onChange(date?.toISOString()); // save as ISO string
+                    onChange(date?.toISOString() ?? null);
                     setOpen(false);
                   }}
                 />
