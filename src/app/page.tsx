@@ -23,6 +23,8 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import Header from "@/components/layout/nav-bar";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 const navLinks = [
   { href: "#features", label: "Features" },
@@ -32,6 +34,24 @@ const navLinks = [
 ];
 
 export default async function HomePage() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+  let findPathName = "/internships";
+  let postPathName = "/auth/signin";
+
+  if (session && session.user.role === "INTERN") {
+    findPathName = "/dashboard/intern";
+  }
+
+  if (session && session.user.role === "ORGANIZATION") {
+    postPathName = "/dashboard/organization/internships/create";
+  }
+
+  if (session && session.user.role === "ADMIN") {
+    postPathName = "/dashboard/admin/internships/create";
+  }
+
   return (
     <div className="flex min-h-screen flex-col overflow-x-hidden">
       {/* Header */}
@@ -60,12 +80,17 @@ export default async function HomePage() {
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
                   <Button size="lg" className="h-12 px-8" asChild>
-                    <Link href={"/internships"}>
+                    <Link href={findPathName}>
                       Find Internships <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
-                  <Button variant="outline" size="lg" className="h-12 px-8">
-                    Post Internships
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="h-12 px-8"
+                    asChild
+                  >
+                    <Link href={postPathName}>Post Internships</Link>
                   </Button>
                 </div>
                 <div className="text-muted-foreground flex items-center gap-4 text-sm">
