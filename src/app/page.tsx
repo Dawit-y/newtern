@@ -39,8 +39,9 @@ export default async function HomePage() {
   });
   let findPathName = "/internships";
   let postPathName = "/auth/signin";
+  const isIntern = session && session.user.role === "INTERN";
 
-  if (session && session.user.role === "INTERN") {
+  if (session && isIntern) {
     findPathName = "/dashboard/intern";
   }
 
@@ -84,14 +85,16 @@ export default async function HomePage() {
                       Find Internships <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="h-12 px-8"
-                    asChild
-                  >
-                    <Link href={postPathName}>Post Internships</Link>
-                  </Button>
+                  {!isIntern && (
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="h-12 px-8"
+                      asChild
+                    >
+                      <Link href={postPathName}>Post Internships</Link>
+                    </Button>
+                  )}
                 </div>
                 <div className="text-muted-foreground flex items-center gap-4 text-sm">
                   <div className="flex items-center gap-1">

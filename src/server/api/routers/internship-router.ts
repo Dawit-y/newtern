@@ -9,7 +9,10 @@ import { type ApplicationStatus } from "@/lib/validation/applications";
 import { z } from "zod";
 import { generateSlug } from "@/utils/common-methods";
 import { TRPCError } from "@trpc/server";
-import { getOrgProfileOrThrow } from "@/server/lib/helpers/org";
+import {
+  getOrgProfileOrThrow,
+  getInternProfileOrThrow,
+} from "@/server/lib/helpers/org";
 import {
   assertNotIntern,
   assertOrganization,
@@ -64,7 +67,48 @@ export const internshipsRouter = createTRPCRouter({
       });
     }),
 
-  list: protectedProcedure
+  listForIntern: protectedProcedure
+    .input(
+      z
+        .object({
+          skip: z.number().min(0).default(0),
+          take: z.number().min(1).max(50).default(10),
+        })
+        .optional(),
+    )
+    .query(async ({ input, ctx }) => {
+      const { id } = ctx.session.user;
+      const internProfile = await getInternProfileOrThrow(ctx.db, id);
+
+      const internships = await ctx.db.internship.findMany({
+        skip: input?.skip,
+        take: input?.take,
+        where: {
+          published: true,
+          approved: true,
+        },
+        include: {
+          organization: true,
+          applications: {
+            where: { internId: internProfile.id },
+          },
+          _count: {
+            select: { tasks: true, applications: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      return internships.map((internship) => ({
+        ...internship,
+        applications:
+          internship.applications.length > 0
+            ? internship.applications[0]
+            : null,
+      }));
+    }),
+
+  listForOrganization: protectedProcedure
     .input(
       z
         .object({
@@ -76,38 +120,58 @@ export const internshipsRouter = createTRPCRouter({
         .optional(),
     )
     .query(async ({ input, ctx }) => {
-      const { role, id } = ctx.session.user;
+      const orgProfile = await getOrgProfileOrThrow(
+        ctx.db,
+        ctx.session.user.id,
+      );
 
-      if (role === "ORGANIZATION") {
-        const orgProfile = await getOrgProfileOrThrow(ctx.db, id);
-        return ctx.db.internship.findMany({
-          skip: input?.skip,
-          take: input?.take,
-          where: {
-            organizationId: orgProfile.id,
-            published: input?.published,
-            approved: input?.approved,
+      return ctx.db.internship.findMany({
+        skip: input?.skip,
+        take: input?.take,
+        where: {
+          organizationId: orgProfile.id,
+          published: input?.published,
+          approved: input?.approved,
+        },
+        include: {
+          _count: {
+            select: { tasks: true, applications: true },
           },
-          orderBy: { createdAt: "desc" },
-        });
-      }
-
-      if (role === "ADMIN") {
-        return ctx.db.internship.findMany({
-          skip: input?.skip,
-          take: input?.take,
-          where: {
-            published: input?.published,
-            approved: input?.approved,
-          },
-          orderBy: { createdAt: "desc" },
-        });
-      }
-
-      return []; // interns cannot list all
+        },
+        orderBy: { createdAt: "desc" },
+      });
     }),
 
-  listForIntern: protectedProcedure
+  listForAdmin: protectedProcedure
+    .input(
+      z
+        .object({
+          skip: z.number().min(0).default(0),
+          take: z.number().min(1).max(50).default(10),
+          published: z.boolean().optional(),
+          approved: z.boolean().optional(),
+        })
+        .optional(),
+    )
+    .query(async ({ input, ctx }) => {
+      return ctx.db.internship.findMany({
+        skip: input?.skip,
+        take: input?.take,
+        where: {
+          published: input?.published,
+          approved: input?.approved,
+        },
+        include: {
+          organization: true,
+          _count: {
+            select: { tasks: true, applications: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+    }),
+
+  myInternships: protectedProcedure
     .input(
       z
         .object({
@@ -426,7 +490,7 @@ export const internshipsRouter = createTRPCRouter({
         where: { id: input },
       });
     }),
-  
+
   publish: protectedProcedure
     .input(
       z.object({

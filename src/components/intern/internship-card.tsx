@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { Building2, MapPin, ExternalLink } from "lucide-react";
 
-// UI Components
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -14,12 +13,70 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+
 import { type RouterOutputs } from "@/trpc/react";
 
-type Internship = RouterOutputs["internships"]["listPublic"][number];
+type Internship = RouterOutputs["internships"]["listForIntern"][number];
 
-export default function InternshipCard({ internship }: { internship: Internship }) {
+export default function InternshipCard({
+  internship,
+}: {
+  internship: Internship;
+}) {
   const router = useRouter();
+  const application = internship.applications;
+
+  const getButtonState = () => {
+    if (!application) {
+      return {
+        label: "Apply Now",
+        variant: "default" as const,
+        disabled: false,
+        onClick: () =>
+          router.push(`/dashboard/intern/internship/${internship.slug}/apply`),
+      };
+    }
+
+    switch (application.status) {
+      case "PENDING":
+        return {
+          label: "Application Pending",
+          variant: "secondary" as const,
+          disabled: true,
+        };
+      case "ACCEPTED":
+        return {
+          label: "Accepted 🎉",
+          variant: "secondary" as const,
+          disabled: true,
+        };
+      case "REJECTED":
+        return {
+          label: "Rejected",
+          variant: "destructive" as const,
+          disabled: true,
+        };
+      case "WITHDRAWN":
+        return {
+          label: "Withdrawn",
+          variant: "outline" as const,
+          disabled: true,
+        };
+      default:
+        return {
+          label: "Apply Now",
+          variant: "default" as const,
+          disabled: false,
+          onClick: () =>
+            router.push(
+              `/dashboard/intern/internship/${internship.slug}/apply`,
+            ),
+        };
+    }
+  };
+
+  const buttonState = getButtonState();
+
   return (
     <Card className="group transition-all hover:shadow-lg">
       <CardHeader>
@@ -44,10 +101,13 @@ export default function InternshipCard({ internship }: { internship: Internship 
           </Badge>
         </div>
       </CardHeader>
+
       <CardContent className="space-y-3">
         <p className="text-muted-foreground line-clamp-2">
           {internship.description}
         </p>
+
+        {/* Skills */}
         <div className="flex flex-wrap gap-1.5">
           {internship.skills.slice(0, 3).map((s: string) => (
             <Badge key={s} variant="secondary" className="text-xs">
@@ -60,22 +120,24 @@ export default function InternshipCard({ internship }: { internship: Internship 
             </Badge>
           )}
         </div>
+
+        {/* Stats */}
         <div className="text-muted-foreground flex items-center justify-between text-sm">
           <span>{internship._count.tasks} tasks</span>
           <span>
             Deadline: {format(new Date(internship.deadline), "MMM d")}
           </span>
         </div>
+
+        {/* Actions */}
         <div className="flex gap-2">
           <Button
             className="flex-1"
-            onClick={() =>
-              router.push(
-                `/dashboard/intern/internship/${internship.slug}/apply`,
-              )
-            }
+            variant={buttonState.variant}
+            disabled={buttonState.disabled}
+            onClick={buttonState.onClick}
           >
-            Apply Now
+            {buttonState.label}
           </Button>
           <Button
             variant="outline"

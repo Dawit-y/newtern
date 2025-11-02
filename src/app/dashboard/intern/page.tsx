@@ -38,9 +38,9 @@ export default function InternDashboard() {
 
   // Data
   const { data: internships, isLoading: loadingPublic } =
-    api.internships.listPublic.useQuery();
-  const { data: myInternships, isLoading: loadingMy } =
     api.internships.listForIntern.useQuery();
+  const { data: myInternships, isLoading: loadingMy } =
+    api.internships.myInternships.useQuery();
 
   // Derived Stats
   const stats = useMemo(() => {
@@ -111,7 +111,7 @@ export default function InternDashboard() {
                 label="Certificates"
                 value={stats.completed}
                 trend={
-                  stats.rating as number > 0
+                  (stats.rating as number) > 0
                     ? `${stats.rating} average rating`
                     : "Keep going!"
                 }
@@ -251,7 +251,6 @@ export default function InternDashboard() {
                   )}
                 </CardContent>
               </Card>
-
               {/* Skills Progress */}
               <Card>
                 <CardHeader>

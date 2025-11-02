@@ -17,7 +17,7 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { type RouterOutputs } from "@/trpc/react";
 
-type Internship = RouterOutputs["internships"]["listForIntern"][number];
+type Internship = RouterOutputs["internships"]["myInternships"][number];
 
 export default function MyInternshipCard({
   internship,
