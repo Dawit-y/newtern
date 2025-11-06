@@ -12,6 +12,15 @@ export function assertNotIntern(ctx: ProtectedContext) {
 }
 
 /**
+ * Ensure the user is an INTERN
+ */
+export function assertIntern(ctx: ProtectedContext) {
+  if (ctx.session.user.role !== "INTERN") {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "Not authorized" });
+  }
+}
+
+/**
  * Ensure the user is an ORGANIZATION
  */
 export function assertOrganization(ctx: ProtectedContext) {

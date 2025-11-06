@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Briefcase, LayoutDashboard } from "lucide-react";
+import { Briefcase, LayoutDashboard, User } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +26,7 @@ interface HeaderProps {
 
 export default function NavBar({ links = [] }: HeaderProps) {
   const { data: session, isPending } = useSession();
+  const isIntern = session && session?.user?.role === "INTERN";
 
   // Show loading state while session is being fetched
   if (isPending) {
@@ -97,6 +98,14 @@ export default function NavBar({ links = [] }: HeaderProps) {
                 </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
+                {isIntern && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard/intern/profile">
+                      <User className="mr-2 h-4 w-4" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem asChild>
                   <Link href={dashboardPath}>
                     <LayoutDashboard className="mr-2 h-4 w-4" />

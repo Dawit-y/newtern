@@ -1,17 +1,30 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { uploadFile, getUploadPath } from "@/lib/file-upload";
+import {
+  uploadFile,
+  getUploadPath,
+  getInternProfileResumePath,
+  getAvatarUploadPath,
+  getFileUrl,
+} from "@/lib/file-upload";
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File;
-    const type = formData.get("type") as "cover-letter" | "resume";
+    const type = formData.get("type") as
+      | "cover-letter"
+      | "resume"
+      | "profile-resume"
+      | "avatar";
 
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    if (!type || !["cover-letter", "resume"].includes(type)) {
+    if (
+      !type ||
+      !["cover-letter", "resume", "profile-resume", "avatar"].includes(type)
+    ) {
       return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
     }
 
@@ -24,25 +37,29 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate file type
-    const allowedTypes = [
-      "application/pdf",
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "text/plain",
-    ];
+    const isAvatar = type === "avatar";
+    const allowedTypes = isAvatar
+      ? ["image/png", "image/jpeg", "image/webp", "image/gif"]
+      : ["application/pdf"];
 
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
         {
-          error:
-            "Invalid file type. Only PDF, DOC, DOCX, and TXT files are allowed.",
+          error: isAvatar
+            ? "Invalid file type. Only PNG, JPG, WEBP, or GIF images are allowed."
+            : "Invalid file type. Only PDF files are allowed.",
         },
         { status: 400 },
       );
     }
 
     // Upload the file
-    const uploadDir = getUploadPath(type);
+    const uploadDir =
+      type === "profile-resume"
+        ? getInternProfileResumePath()
+        : type === "avatar"
+          ? getAvatarUploadPath()
+          : getUploadPath(type);
     const result = await uploadFile(file, uploadDir);
 
     if (!result.success) {
@@ -52,10 +69,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Return relative URL for profile resume, absolute path for others
+    const filePath =
+      (type === "profile-resume" || type === "avatar") && result.filePath
+        ? getFileUrl(result.filePath)
+        : result.filePath;
+
     return NextResponse.json({
       success: true,
       fileName: result.fileName,
-      filePath: result.filePath,
+      filePath,
     });
   } catch (error) {
     console.error("Upload error:", error);

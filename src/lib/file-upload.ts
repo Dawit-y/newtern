@@ -55,6 +55,16 @@ export function getUploadPath(type: "cover-letter" | "resume"): string {
   );
 }
 
+export function getInternProfileResumePath(): string {
+  const baseDir = process.cwd();
+  return join(baseDir, "uploads", "intern-profile", "resume");
+}
+
+export function getAvatarUploadPath(): string {
+  const baseDir = process.cwd();
+  return join(baseDir, "uploads", "avatars");
+}
+
 export function getFileUrl(filePath: string): string {
   // Convert absolute path to relative URL
   const relativePath = filePath.replace(process.cwd(), "").replace(/\\/g, "/");
