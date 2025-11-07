@@ -17,16 +17,17 @@ function getContentType(filePath: string): string {
 }
 
 export async function GET(
-  _request: NextRequest,
-  { params }: { params: { path: string[] } },
+  request: NextRequest,
+  { params }: { params: Promise<{ path: string[] }> },
 ) {
+  const { path } = await params;
+
   try {
     const baseDir = join(process.cwd(), "uploads");
-    const unsafePath = params.path.join("/");
+    const unsafePath = path.join("/");
     const normalized = normalize(unsafePath).replace(/^\.\/+/, "");
     const absolutePath = join(baseDir, normalized);
 
-    // Ensure the resolved path is within the uploads directory
     if (!absolutePath.startsWith(baseDir)) {
       return NextResponse.json({ error: "Invalid path" }, { status: 400 });
     }
@@ -38,8 +39,12 @@ export async function GET(
 
     const file = await readFile(absolutePath);
     const contentType = getContentType(absolutePath);
+    const arrayBuffer = file.buffer.slice(
+      file.byteOffset,
+      file.byteOffset + file.byteLength,
+    ) as ArrayBuffer;
 
-    return new NextResponse(file, {
+    return new NextResponse(arrayBuffer, {
       status: 200,
       headers: {
         "Content-Type": contentType,
