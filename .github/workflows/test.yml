@@ -8,41 +8,41 @@ on:
 
 jobs:
   setup:
-  runs-on: ubuntu-latest
-  outputs:
-    pnpm_store_path: ${{ steps.store.outputs.pnpm_store_path }}
-  steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+    runs-on: ubuntu-latest
+    outputs:
+      pnpm_store_path: ${{ steps.store.outputs.pnpm_store_path }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Setup Node
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
-        cache: 'pnpm'
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
 
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        version: 10
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
-    - name: Get pnpm store directory
-      id: store
-      run: echo "pnpm_store_path=$(pnpm store path)" >> $GITHUB_OUTPUT
+      - name: Get pnpm store directory
+        id: store
+        run: echo "pnpm_store_path=$(pnpm store path)" >> $GITHUB_OUTPUT
 
-    - name: Cache pnpm store
-      uses: actions/cache@v4
-      with:
-        path: ${{ steps.store.outputs.pnpm_store_path }}
-        key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-        restore-keys: |
-          ${{ runner.os }}-pnpm-
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.store.outputs.pnpm_store_path }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
 
-    - name: Install dependencies
-      run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-    - name: Generate Prisma Client
-      run: pnpm exec prisma generate
+      - name: Generate Prisma Client
+        run: pnpm exec prisma generate
 
   unit:
     needs: setup
@@ -132,5 +132,3 @@ jobs:
             playwright-report
             test-results
           if-no-files-found: ignore
-
-
