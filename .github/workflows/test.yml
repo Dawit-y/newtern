@@ -61,6 +61,20 @@ jobs:
   e2e:
     needs: setup
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     env:
       NODE_ENV: test
       DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/test_db"
@@ -85,6 +99,15 @@ jobs:
 
       - name: Generate Prisma Client
         run: pnpm exec prisma generate
+
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          for i in {1..10}; do
+            nc -z localhost 5432 && echo "PostgreSQL is ready!" && exit 0
+            echo "Waiting for PostgreSQL... attempt $i"
+            sleep 3
+          done
+          echo "PostgreSQL failed to start" && exit 1
 
       - name: Setup test database
         run: pnpm exec prisma db push --skip-generate
