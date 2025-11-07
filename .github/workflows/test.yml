@@ -9,8 +9,6 @@ on:
 jobs:
   setup:
     runs-on: ubuntu-latest
-    outputs:
-      pnpm_store_path: ${{ steps.store.outputs.pnpm_store_path }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -19,30 +17,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - name: Get pnpm store directory
-        id: store
-        run: echo "pnpm_store_path=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - name: Cache pnpm store
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.store.outputs.pnpm_store_path }}
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-
+          cache: 'npm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: Generate Prisma Client
-        run: pnpm exec prisma generate
+        run: npx prisma generate
 
   unit:
     needs: setup
@@ -55,26 +36,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - name: Restore pnpm store
-        uses: actions/cache@v4
-        with:
-          path: ~/.local/share/pnpm/store
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-
+          cache: 'npm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: Run unit tests (Vitest)
-        run: pnpm test -- --reporter=junit --outputFile junit-vitest.xml || pnpm test
+        run: npm test -- --reporter=junit --outputFile junit-vitest.xml || npm test
 
       - name: Upload Vitest report
         if: always()
@@ -97,31 +65,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - name: Restore pnpm store
-        uses: actions/cache@v4
-        with:
-          path: ~/.local/share/pnpm/store
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-
+          cache: 'npm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: Install Playwright Browsers
-        run: pnpm exec playwright install --with-deps
+        run: npx playwright install --with-deps
 
       - name: Run E2E tests (Playwright)
         env:
           NODE_ENV: test
-        run: pnpm test:e2e --reporter=junit,line || pnpm test:e2e
+        run: npm run test:e2e -- --reporter=junit,line || npm run test:e2e
 
       - name: Upload Playwright report
         if: always()
