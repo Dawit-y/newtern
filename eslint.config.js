@@ -36,6 +36,26 @@ export default tseslint.config(
     },
   },
   {
+    files: ["src/tests/**/*.{ts,tsx}", "e2e/**/*.ts"],
+    languageOptions: {
+      globals: {
+        // Vitest globals
+        describe: "readonly",
+        it: "readonly",
+        test: "readonly",
+        expect: "readonly",
+        vi: "readonly",
+        beforeAll: "readonly",
+        afterAll: "readonly",
+        beforeEach: "readonly",
+        afterEach: "readonly",
+      },
+    },
+    rules: {
+      // Relax common testing patterns if needed later
+    },
+  },
+  {
     linterOptions: {
       reportUnusedDisableDirectives: true,
     },
