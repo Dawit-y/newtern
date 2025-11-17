@@ -204,9 +204,9 @@ export default function ApplicationsPage() {
         <Tabs value={statusFilter} onValueChange={setStatusFilter}>
           <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="pending">Pending</TabsTrigger>
-            <TabsTrigger value="accepted">Accepted</TabsTrigger>
-            <TabsTrigger value="rejected">Rejected</TabsTrigger>
+            <TabsTrigger value="PENDING">Pending</TabsTrigger>
+            <TabsTrigger value="ACCEPTED">Accepted</TabsTrigger>
+            <TabsTrigger value="REJECTED">Rejected</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>

@@ -1,6 +1,18 @@
 import "@testing-library/jest-dom";
-import { beforeAll, afterAll, afterEach } from "vitest";
+import { beforeAll, afterAll, afterEach, vi } from "vitest";
 import { server } from "@/mocks/server";
+
+// MUST happen before any server code executes
+vi.mock("@/env", () => ({
+  env: {
+    NODE_ENV: "test",
+    BETTER_AUTH_SECRET: "something",
+    BETTER_AUTH_URL: "http://localhost:3000",
+    GOOGLE_CLIENT_ID: "",
+    GOOGLE_CLIENT_SECRET: "",
+    DATABASE_URL: "test-url",
+  },
+}));
 
 // Establish API mocking before all tests.
 beforeAll(() => server.listen({ onUnhandledRequest: "warn" }));
