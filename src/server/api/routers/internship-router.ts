@@ -80,6 +80,10 @@ export const internshipsRouter = createTRPCRouter({
       const { id } = ctx.session.user;
       const internProfile = await getInternProfileOrThrow(ctx.db, id);
 
+      const total = await ctx.db.internship.count({
+        where: { published: true, approved: true },
+      });
+
       const internships = await ctx.db.internship.findMany({
         skip: input?.skip,
         take: input?.take,
@@ -99,13 +103,16 @@ export const internshipsRouter = createTRPCRouter({
         orderBy: { createdAt: "desc" },
       });
 
-      return internships.map((internship) => ({
-        ...internship,
-        applications:
-          internship.applications.length > 0
-            ? internship.applications[0]
-            : null,
-      }));
+      return {
+        items: internships.map((internship) => ({
+          ...internship,
+          applications:
+            internship.applications.length > 0
+              ? internship.applications[0]
+              : null,
+        })),
+        total,
+      };
     }),
 
   listForOrganization: protectedProcedure

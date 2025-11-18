@@ -28,9 +28,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import InternshipCard from "@/components/intern/internship-card";
 import MyInternshipCard from "@/components/intern/my-internship-card";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 export default function InternDashboard() {
   const { data: session } = useSession();
+  const [page, setPage] = useState(0);
+  const take = 10;
 
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
@@ -38,9 +49,14 @@ export default function InternDashboard() {
 
   // Data
   const { data: internships, isLoading: loadingPublic } =
-    api.internships.listForIntern.useQuery();
+    api.internships.listForIntern.useQuery({
+      skip: page * take,
+      take,
+    });
   const { data: myInternships, isLoading: loadingMy } =
     api.internships.myInternships.useQuery();
+
+  const totalPages = Math.ceil((internships?.total ?? 0) / take);
 
   // Derived Stats
   const stats = useMemo(() => {
@@ -69,7 +85,7 @@ export default function InternDashboard() {
   // Filter internships
   const filteredInternships = useMemo(() => {
     if (!internships) return [];
-    return internships.filter(
+    return internships.items.filter(
       (i) =>
         i.title.toLowerCase().includes(searchTerm.toLowerCase()) ??
         i.organization.organizationName
@@ -165,10 +181,56 @@ export default function InternDashboard() {
                 description="Try adjusting your search or filters."
               />
             ) : (
-              <div className="grid gap-6 md:grid-cols-2">
-                {filteredInternships.map((internship) => (
-                  <InternshipCard key={internship.id} internship={internship} />
-                ))}
+              <div className="flex-col space-y-5">
+                <div className="mb-4 grid gap-6 md:grid-cols-2">
+                  {filteredInternships.map((internship) => (
+                    <InternshipCard
+                      key={internship.id}
+                      internship={internship}
+                    />
+                  ))}
+                </div>
+                <Pagination>
+                  <PaginationContent>
+                    {/* Previous Button */}
+                    <PaginationItem>
+                      <PaginationPrevious
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setPage((p) => Math.max(0, p - 1));
+                        }}
+                      />
+                    </PaginationItem>
+
+                    {/* Numbered Pages */}
+                    {Array.from({ length: totalPages }, (_, i) => (
+                      <PaginationItem key={i}>
+                        <PaginationLink
+                          href="#"
+                          isActive={page === i}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setPage(i);
+                          }}
+                        >
+                          {i + 1}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+
+                    {/* Next Button */}
+                    <PaginationItem>
+                      <PaginationNext
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (page + 1 < totalPages) setPage(page + 1);
+                        }}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
               </div>
             )}
           </TabsContent>
