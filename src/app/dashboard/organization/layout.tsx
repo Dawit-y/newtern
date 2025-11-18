@@ -93,9 +93,9 @@ export default async function OrganizationLayout({
     <>
       <SidebarProvider>
         <AppSidebar data={organizationSidebarData} />
-        <SidebarInset>
+        <SidebarInset className="flex flex-col">
           <Header />
-          {children}
+          <main className="flex-1 overflow-hidden">{children}</main>
         </SidebarInset>
       </SidebarProvider>
     </>

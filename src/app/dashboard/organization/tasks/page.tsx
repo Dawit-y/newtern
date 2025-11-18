@@ -136,7 +136,7 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6 p-6">
+    <div className="flex h-full flex-col gap-6 overflow-hidden p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -194,103 +194,109 @@ export default function TasksPage() {
       </div>
 
       {/* Table */}
-      <Card>
+      <Card className="flex flex-1 flex-col overflow-hidden">
         <CardHeader>
           <CardTitle>All Tasks</CardTitle>
           <CardDescription>
             Manage tasks across all your internship programs
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1 overflow-hidden p-0">
           {filteredTasks.length === 0 ? (
-            <p className="text-muted-foreground py-6 text-center">
-              No tasks found
-            </p>
+            <div className="flex h-32 items-center justify-center">
+              <p className="text-muted-foreground">No tasks found</p>
+            </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Task</TableHead>
-                  <TableHead>Internship</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Submission Type</TableHead>
-                  <TableHead>Resources</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredTasks.map((task) => {
-                  const status = getStatus(task);
-                  const submissionTypes = getSubmissionTypes(task);
-                  return (
-                    <TableRow key={task.id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{task.title}</div>
-                          <div className="text-muted-foreground line-clamp-1 text-sm">
-                            {task.description}
+            <div className="h-full overflow-auto">
+              <Table>
+                <TableHeader className="bg-background sticky top-0">
+                  <TableRow>
+                    <TableHead>Task</TableHead>
+                    <TableHead>Internship</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Submission Type</TableHead>
+                    <TableHead>Resources</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredTasks.map((task) => {
+                    const status = getStatus(task);
+                    const submissionTypes = getSubmissionTypes(task);
+                    return (
+                      <TableRow key={task.id}>
+                        <TableCell className="max-w-[250px]">
+                          <div>
+                            <div className="max-w-xs truncate font-medium">
+                              {task.title}
+                            </div>
+                            <p className="text-muted-foreground max-w-xs truncate text-sm">
+                              {task.description}
+                            </p>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-medium">
-                          {task.internship.title}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getStatusColor(status)}>{status}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          {submissionTypes.map((type) => (
-                            <Badge
-                              key={type}
-                              variant="outline"
-                              className="text-xs"
-                            >
-                              <span className="flex items-center gap-1">
-                                {getSubmissionTypeIcon(type)}
-                                {type}
-                              </span>
-                            </Badge>
-                          ))}
-                        </div>
-                      </TableCell>
-                      <TableCell>{task.resources.length}</TableCell>
-                      <TableCell>
-                        {format(task.createdAt, "MMM dd, yyyy")}
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => setSelectedTask(task)}
-                            >
-                              <Eye className="mr-2 h-4 w-4" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600">
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                        </TableCell>
+                        <TableCell>
+                          <div className="max-w-xs truncate font-medium">
+                            {task.internship.title}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={getStatusColor(status)}>
+                            {status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            {submissionTypes.map((type) => (
+                              <Badge
+                                key={type}
+                                variant="outline"
+                                className="text-xs"
+                              >
+                                <span className="flex items-center gap-1">
+                                  {getSubmissionTypeIcon(type)}
+                                  {type}
+                                </span>
+                              </Badge>
+                            ))}
+                          </div>
+                        </TableCell>
+                        <TableCell>{task.resources.length}</TableCell>
+                        <TableCell>
+                          {format(task.createdAt, "MMM dd, yyyy")}
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => setSelectedTask(task)}
+                              >
+                                <Eye className="mr-2 h-4 w-4" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="text-red-600">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
