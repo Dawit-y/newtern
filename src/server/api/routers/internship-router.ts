@@ -221,6 +221,14 @@ export const internshipsRouter = createTRPCRouter({
         orderBy: { createdAt: "desc" },
         include: {
           organization: true,
+          applications: {
+            where: { internId: internProfile.id },
+            select: {
+              id: true,
+              status: true,
+              createdAt: true,
+            },
+          },
           internshipProgress: {
             where: {
               internId: internProfile.id,
@@ -253,6 +261,10 @@ export const internshipsRouter = createTRPCRouter({
         internshipProgress:
           internship.internshipProgress.length > 0
             ? internship.internshipProgress[0]
+            : null,
+        application:
+          internship.applications.length > 0
+            ? internship.applications[0]
             : null,
       }));
     }),

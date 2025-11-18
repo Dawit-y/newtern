@@ -31,7 +31,6 @@ import MyInternshipCard from "@/components/intern/my-internship-card";
 import {
   Pagination,
   PaginationContent,
-  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
