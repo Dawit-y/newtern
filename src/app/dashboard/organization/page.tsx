@@ -88,7 +88,7 @@ const applications = [
 
 export default function OrganizationDashboard() {
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4">
+    <div className="flex h-full flex-col gap-4 overflow-auto p-4">
       {/* Stats Cards */}
       <div className="grid auto-rows-min gap-4 md:grid-cols-4">
         <Card>
@@ -142,9 +142,9 @@ export default function OrganizationDashboard() {
       </div>
 
       {/* Main Content */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid flex-1 gap-4 overflow-hidden md:grid-cols-2">
         {/* Recent Internships */}
-        <Card>
+        <Card className="flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Recent Internships</CardTitle>
             <Button size="sm">
@@ -152,15 +152,15 @@ export default function OrganizationDashboard() {
               Create New
             </Button>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="flex-1 space-y-4 overflow-auto">
             {internships.map((internship) => (
               <div
                 key={internship.id}
                 className="flex items-center justify-between rounded-lg border p-4"
               >
-                <div className="space-y-1">
-                  <h4 className="font-medium">{internship.title}</h4>
-                  <div className="text-muted-foreground flex items-center gap-4 text-sm">
+                <div className="min-w-0 flex-1 space-y-1">
+                  <h4 className="truncate font-medium">{internship.title}</h4>
+                  <div className="text-muted-foreground flex flex-wrap items-center gap-4 text-sm">
                     <span className="flex items-center gap-1">
                       <Users className="h-3 w-3" />
                       {internship.applicants} applicants
@@ -211,18 +211,18 @@ export default function OrganizationDashboard() {
         </Card>
 
         {/* Recent Applications */}
-        <Card>
+        <Card className="flex flex-col">
           <CardHeader>
             <CardTitle>Recent Applications</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="flex-1 space-y-4 overflow-auto">
             {applications.map((application) => (
               <div
                 key={application.id}
                 className="flex items-center justify-between rounded-lg border p-4"
               >
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-8 w-8">
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <Avatar className="h-8 w-8 shrink-0">
                     <AvatarFallback>
                       {application.name
                         .split(" ")
@@ -230,14 +230,16 @@ export default function OrganizationDashboard() {
                         .join("")}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="space-y-1">
-                    <h4 className="text-sm font-medium">{application.name}</h4>
-                    <p className="text-muted-foreground text-xs">
+                  <div className="min-w-0 space-y-1">
+                    <h4 className="truncate text-sm font-medium">
+                      {application.name}
+                    </h4>
+                    <p className="text-muted-foreground truncate text-xs">
                       {application.internship}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex shrink-0 items-center gap-2">
                   <span className="text-sm font-medium">
                     {application.score}%
                   </span>

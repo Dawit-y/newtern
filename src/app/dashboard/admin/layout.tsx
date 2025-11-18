@@ -1,9 +1,6 @@
 import { type Metadata } from "next";
 import { AppSidebar, type IconName } from "@/components/dashboards/app-sidebar";
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import Header from "@/components/dashboards/header";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -114,9 +111,9 @@ export default async function AdminLayout({
     <>
       <SidebarProvider>
         <AppSidebar data={adminSidebarData} />
-        <SidebarInset>
+        <SidebarInset className="flex flex-col">
           <Header />
-          {children}
+          <main className="flex-1 overflow-hidden">{children}</main>
         </SidebarInset>
       </SidebarProvider>
     </>
