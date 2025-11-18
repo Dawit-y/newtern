@@ -44,7 +44,12 @@ import {
   Download,
   Mail,
   Clock,
+  Phone,
+  MapPin,
+  GraduationCap,
 } from "lucide-react";
+import Link from "next/link";
+import { toast } from "sonner";
 
 type Application = RouterOutputs["applications"]["list"][number];
 
@@ -63,20 +68,35 @@ export default function ApplicationsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "accepted":
-        return "default";
-      case "pending":
+      case "ACCEPTED":
+        return "success";
+      case "PENDING":
         return "secondary";
-      case "rejected":
+      case "REJECTED":
         return "destructive";
       default:
         return "secondary";
     }
   };
 
-  const handleStatusChange = (applicationId: string, newStatus: ApplicationStatus) => {
-    // In a real app, this would make an API call
-    console.log(`Changing application ${applicationId} status to ${newStatus}`);
+  const utils = api.useUtils();
+  const changeStatus = api.applications.updateStatus.useMutation({
+    onSuccess: async () => {
+      await utils.applications.list.invalidate();
+      toast.success(`Application status changed`);
+    },
+    onError: () => {
+      toast.error("Failed to update application status. Please try again.");
+    },
+  });
+  const handleStatusChange = async (
+    applicationId: string,
+    newStatus: ApplicationStatus,
+  ) => {
+    await changeStatus.mutateAsync({
+      id: applicationId,
+      status: newStatus,
+    });
   };
 
   const filteredApplications = applications.filter((app) => {
@@ -184,9 +204,9 @@ export default function ApplicationsPage() {
         <Tabs value={statusFilter} onValueChange={setStatusFilter}>
           <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="pending">Pending</TabsTrigger>
-            <TabsTrigger value="accepted">Accepted</TabsTrigger>
-            <TabsTrigger value="rejected">Rejected</TabsTrigger>
+            <TabsTrigger value="PENDING">Pending</TabsTrigger>
+            <TabsTrigger value="ACCEPTED">Accepted</TabsTrigger>
+            <TabsTrigger value="REJECTED">Rejected</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -320,10 +340,10 @@ export default function ApplicationsPage() {
                                           }
                                         </span>
                                       </div>
-                                      {/* <div className="flex items-center gap-2">
+                                      <div className="flex items-center gap-2">
                                         <Phone className="text-muted-foreground h-4 w-4" />
                                         <span className="text-sm">
-                                          {selectedApplication.intern.user.phone}
+                                          {selectedApplication.intern.phone}
                                         </span>
                                       </div>
                                       <div className="flex items-center gap-2">
@@ -331,15 +351,21 @@ export default function ApplicationsPage() {
                                         <span className="text-sm">
                                           {selectedApplication.intern.location}
                                         </span>
-                                      </div> */}
-                                      {/* <div className="flex items-center gap-2">
+                                      </div>
+                                      <div className="flex items-center gap-2">
                                         <GraduationCap className="text-muted-foreground h-4 w-4" />
                                         <span className="text-sm">
-                                          {selectedApplication.intern.university} •
-                                          Class of{" "}
-                                          {selectedApplication.intern.graduationYear}
+                                          {
+                                            selectedApplication.intern
+                                              .university
+                                          }{" "}
+                                          • Class of{" "}
+                                          {
+                                            selectedApplication.intern
+                                              .graduationYear
+                                          }
                                         </span>
-                                      </div> */}
+                                      </div>
                                     </div>
                                   </CardContent>
                                 </Card>
@@ -351,7 +377,7 @@ export default function ApplicationsPage() {
                                     </CardTitle>
                                   </CardHeader>
                                   <CardContent className="space-y-4">
-                                    {/* <div>
+                                    <div>
                                       <Label className="text-sm font-medium">
                                         GPA
                                       </Label>
@@ -374,27 +400,6 @@ export default function ApplicationsPage() {
                                       <p className="text-muted-foreground text-sm">
                                         {selectedApplication.availability}
                                       </p>
-                                    </div> */}
-                                    <div>
-                                      <Label className="text-sm font-medium">
-                                        Skills
-                                      </Label>
-                                      {/* <div className="mt-1 flex flex-wrap gap-1">
-                                        {selectedApplication.intern?.skills?.map(
-                                          (skill: string) => (
-                                            <Badge
-                                              key={skill}
-                                              variant="secondary"
-                                              className="text-xs"
-                                            >
-                                              {skill}
-                                            </Badge>
-                                          ),
-                                        )}
-                                      </div> */}
-                                      <div className="mt-1 flex flex-wrap gap-1">
-                                        {selectedApplication.intern?.skills}
-                                      </div>
                                     </div>
                                   </CardContent>
                                 </Card>
@@ -441,47 +446,55 @@ export default function ApplicationsPage() {
                                         Portfolio
                                       </span>
                                     </div>
-                                    {/* <Button variant="outline" size="sm" asChild>
-                                      <a
-                                        href={selectedApplication.intern.portfolio}
+                                    <Button variant="outline" size="sm" asChild>
+                                      <Link
+                                        href={
+                                          selectedApplication.intern
+                                            .portfolio ?? "#"
+                                        }
                                         target="_blank"
                                         rel="noopener noreferrer"
                                       >
                                         View
-                                      </a>
-                                    </Button> */}
+                                      </Link>
+                                    </Button>
                                   </div>
                                 </CardContent>
                               </Card>
 
                               {/* Action Buttons */}
-                              <div className="flex items-center justify-end gap-3 border-t pt-4">
-                                <Button
-                                  variant="destructive"
-                                  onClick={() =>
-                                    handleStatusChange(
-                                      selectedApplication.id,
-                                      "REJECTED",
-                                    )
-                                  }
-                                  className="flex items-center gap-2"
-                                >
-                                  <X className="h-4 w-4" />
-                                  Reject
-                                </Button>
-                                <Button
-                                  onClick={() =>
-                                    handleStatusChange(
-                                      selectedApplication.id,
-                                      "ACCEPTED",
-                                    )
-                                  }
-                                  className="flex items-center gap-2"
-                                >
-                                  <Check className="h-4 w-4" />
-                                  Accept
-                                </Button>
-                              </div>
+                              {selectedApplication.status === "PENDING" && (
+                                <div className="flex items-center justify-end gap-3 border-t pt-4">
+                                  <Button
+                                    variant="destructive"
+                                    onClick={() =>
+                                      handleStatusChange(
+                                        selectedApplication.id,
+                                        "REJECTED",
+                                      )
+                                    }
+                                    className="flex items-center gap-2"
+                                    disabled={changeStatus.isPending}
+                                  >
+                                    <X className="h-4 w-4" />
+                                    Reject
+                                  </Button>
+                                  <Button
+                                    onClick={() =>
+                                      handleStatusChange(
+                                        selectedApplication.id,
+                                        "ACCEPTED",
+                                      )
+                                    }
+                                    className="flex items-center gap-2"
+                                    variant="success"
+                                    disabled={changeStatus.isPending}
+                                  >
+                                    <Check className="h-4 w-4" />
+                                    Accept
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           )}
                         </DialogContent>
@@ -496,8 +509,9 @@ export default function ApplicationsPage() {
                               handleStatusChange(application.id, "ACCEPTED")
                             }
                             className="text-green-600 hover:text-green-700"
+                            disabled={changeStatus.isPending}
                           >
-                            <Check className="h-4 w-4" />
+                            <Check className="h-2 w-2" />
                           </Button>
                           <Button
                             variant="outline"
@@ -506,8 +520,9 @@ export default function ApplicationsPage() {
                               handleStatusChange(application.id, "REJECTED")
                             }
                             className="text-red-600 hover:text-red-700"
+                            disabled={changeStatus.isPending}
                           >
-                            <X className="h-4 w-4" />
+                            <X className="h-2 w-2" />
                           </Button>
                         </>
                       )}

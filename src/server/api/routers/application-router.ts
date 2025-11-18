@@ -48,7 +48,10 @@ export const applicationRouter = createTRPCRouter({
       return ctx.db.application.findMany({
         skip: input?.skip,
         take: input?.take,
-        where: { internshipId: { in: internshipIds } },
+        where: {
+          internshipId: { in: internshipIds },
+          status: { not: "WITHDRAWN" },
+        },
         include: {
           internship: true,
           intern: {
