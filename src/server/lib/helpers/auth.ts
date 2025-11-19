@@ -77,3 +77,65 @@ export async function assertOrgOwnsInternship(
     });
   }
 }
+
+export async function assertOrgOwnsTask(
+  ctx: ProtectedContext,
+  { taskId }: { taskId: string },
+) {
+  const task = await ctx.db.task.findUnique({
+    where: { id: taskId },
+    include: { internship: true },
+  });
+
+  if (!task) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "Task not found",
+    });
+  }
+
+  const orgProfile = await ctx.db.organizationProfile.findUnique({
+    where: { userId: ctx.session.user.id },
+  });
+
+  if (task.internship.organizationId !== orgProfile?.id) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You don't have permission to access this task",
+    });
+  }
+}
+
+export async function assertOrgOwnsTaskSubmission(
+  ctx: ProtectedContext,
+  { taskSubmissionId }: { taskSubmissionId: string },
+) {
+  const submission = await ctx.db.taskSubmission.findUnique({
+    where: { id: taskSubmissionId },
+    include: {
+      task: {
+        include: {
+          internship: true,
+        },
+      },
+    },
+  });
+
+  if (!submission) {
+    throw new TRPCError({
+      code: "NOT_FOUND",
+      message: "Submission not found",
+    });
+  }
+
+  const orgProfile = await ctx.db.organizationProfile.findUnique({
+    where: { userId: ctx.session.user.id },
+  });
+
+  if (submission.task.internship.organizationId !== orgProfile?.id) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You don't have permission to access this submission",
+    });
+  }
+}
