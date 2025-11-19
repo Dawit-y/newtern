@@ -94,7 +94,11 @@ export default function OrganizationSignupForm() {
 
       <div className="space-y-2">
         <Label htmlFor="organizationName">Organization Name</Label>
-        <Input id="organizationName" {...register("organizationName")} />
+        <Input
+          id="organizationName"
+          placeholder="Enter organization name"
+          {...register("organizationName")}
+        />
         {errors.organizationName && (
           <p className="text-sm text-red-500">
             {errors.organizationName.message}
@@ -105,7 +109,11 @@ export default function OrganizationSignupForm() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="contactFirstName">Contact First Name</Label>
-          <Input id="contactFirstName" {...register("contactFirstName")} />
+          <Input
+            id="contactFirstName"
+            placeholder="Enter first name"
+            {...register("contactFirstName")}
+          />
           {errors.contactFirstName && (
             <p className="text-sm text-red-500">
               {errors.contactFirstName.message}
@@ -114,7 +122,11 @@ export default function OrganizationSignupForm() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="contactLastName">Contact Last Name</Label>
-          <Input id="contactLastName" {...register("contactLastName")} />
+          <Input
+            id="contactLastName"
+            placeholder="Enter last name"
+            {...register("contactLastName")}
+          />
           {errors.contactLastName && (
             <p className="text-sm text-red-500">
               {errors.contactLastName.message}
@@ -125,7 +137,12 @@ export default function OrganizationSignupForm() {
 
       <div className="space-y-2">
         <Label htmlFor="email">Work Email Address</Label>
-        <Input id="email" type="email" {...register("email")} />
+        <Input
+          id="email"
+          type="email"
+          placeholder="Enter work email address"
+          {...register("email")}
+        />
         {errors.email && (
           <p className="text-sm text-red-500">{errors.email.message}</p>
         )}
@@ -133,7 +150,11 @@ export default function OrganizationSignupForm() {
 
       <div className="space-y-2">
         <Label htmlFor="jobTitle">Job Title</Label>
-        <Input id="jobTitle" {...register("jobTitle")} />
+        <Input
+          id="jobTitle"
+          placeholder="Enter your job title"
+          {...register("jobTitle")}
+        />
         {errors.jobTitle && (
           <p className="text-sm text-red-500">{errors.jobTitle.message}</p>
         )}
@@ -147,6 +168,7 @@ export default function OrganizationSignupForm() {
               id="password"
               type={showPassword ? "text" : "password"}
               autoComplete="new-password"
+              placeholder="Create a password"
               {...register("password")}
             />
             <Button
@@ -175,6 +197,7 @@ export default function OrganizationSignupForm() {
               id="confirmPassword"
               type={showConfirmPassword ? "text" : "password"}
               autoComplete="new-password"
+              placeholder="Confirm your password"
               {...register("confirmPassword")}
             />
             <Button
@@ -218,7 +241,7 @@ export default function OrganizationSignupForm() {
           <Label>Company Size</Label>
           <Select onValueChange={(val) => setValue("companySize", val)}>
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select size" />
+              <SelectValue placeholder="Select company size" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="1-10">1-10 employees</SelectItem>
@@ -233,7 +256,12 @@ export default function OrganizationSignupForm() {
 
       <div className="space-y-2">
         <Label htmlFor="website">Company Website</Label>
-        <Input id="website" type="url" {...register("website")} />
+        <Input
+          id="website"
+          type="url"
+          placeholder="https://example.com"
+          {...register("website")}
+        />
         {errors.website && (
           <p className="text-sm text-red-500">{errors.website.message}</p>
         )}
@@ -241,7 +269,11 @@ export default function OrganizationSignupForm() {
 
       <div className="space-y-2">
         <Label htmlFor="location">Location</Label>
-        <Input id="location" {...register("location")} />
+        <Input
+          id="location"
+          placeholder="Enter company location"
+          {...register("location")}
+        />
         {errors.location && (
           <p className="text-sm text-red-500">{errors.location.message}</p>
         )}
@@ -251,6 +283,7 @@ export default function OrganizationSignupForm() {
         <Label htmlFor="description">Company Description</Label>
         <Textarea
           id="description"
+          placeholder="Describe your company and what you do"
           {...register("description")}
           className="min-h-[100px]"
         />
@@ -259,14 +292,15 @@ export default function OrganizationSignupForm() {
         )}
       </div>
 
-      <div className="space-y-2">
+      {/* <div className="space-y-2">
         <Label htmlFor="internshipGoals">Internship Program Goals</Label>
         <Textarea
           id="internshipGoals"
+          placeholder="What are your goals for the internship program?"
           {...register("internshipGoals")}
           className="min-h-[80px]"
         />
-      </div>
+      </div> */}
 
       <div className="flex items-center space-x-2">
         <Checkbox
