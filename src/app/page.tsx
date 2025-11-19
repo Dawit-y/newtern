@@ -57,7 +57,7 @@ export default async function HomePage() {
     <div className="flex min-h-screen flex-col overflow-x-hidden">
       {/* Header */}
       <Header links={navLinks} />
-      <main className="flex-1">
+      <main className="mx-auto flex-col">
         {/* Hero Section */}
         <section className="from-primary/5 via-background to-secondary/5 w-full bg-gradient-to-br py-12">
           <div className="container px-4 md:px-6">
@@ -207,7 +207,7 @@ export default async function HomePage() {
           <div className="container px-4 md:px-6">
             <div className="grid gap-6 lg:grid-cols-[1fr_500px] lg:gap-12 xl:grid-cols-[1fr_600px]">
               <Image
-                src="/student-internship-dashboard.png"
+                src="/intern-hero.png"
                 width="600"
                 height="500"
                 alt="Intern Dashboard"
@@ -324,7 +324,7 @@ export default async function HomePage() {
                 </div>
               </div>
               <Image
-                src="/internship-candidate-dashboard.png"
+                src="/org-hero.png"
                 width="600"
                 height="500"
                 alt="Organization Dashboard"
