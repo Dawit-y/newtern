@@ -89,6 +89,7 @@ model InternProfile {
   applications       Application[]
   taskProgress       TaskProgress[]
   internshipProgress InternshipProgress[]
+  taskSubmissions    TaskSubmission[]
 
   @@map("intern_profile")
 }
@@ -108,7 +109,9 @@ model OrganizationProfile {
   location         String
   description      String
   internshipGoals  String?
-  internships      Internship[]
+
+  internships     Internship[]
+  taskEvaluations TaskEvaluation[]
 
   @@map("organization_profile")
 }
@@ -173,10 +176,11 @@ model Task {
   submitAsText           Boolean @default(false)
   submitAsUrl            Boolean @default(false)
 
-  internshipId String
-  internship   Internship     @relation(fields: [internshipId], references: [id], onDelete: Cascade)
-  resources    Resource[]
-  taskProgress TaskProgress[]
+  internshipId    String
+  internship      Internship       @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  resources       Resource[]
+  taskProgress    TaskProgress[]
+  taskSubmissions TaskSubmission[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -271,4 +275,46 @@ enum TaskStatus {
   NOT_STARTED
   IN_PROGRESS
   COMPLETED
+}
+
+model TaskSubmission {
+  id          String   @id @default(cuid())
+  taskId      String
+  internId    String
+  submittedAt DateTime @default(now())
+
+  textContent String?
+  fileUrl     String?
+  url         String?
+
+  status SubmissionStatus @default(SUBMITTED)
+
+  task       Task            @relation(fields: [taskId], references: [id])
+  intern     InternProfile   @relation(fields: [internId], references: [id])
+  evaluation TaskEvaluation?
+
+  @@unique([taskId, internId])
+  @@map("task_submissions")
+}
+
+model TaskEvaluation {
+  id               String   @id @default(cuid())
+  taskSubmissionId String   @unique
+  organizationId   String
+  score            Int
+  feedback         String?
+  evaluatedAt      DateTime @default(now())
+
+  taskSubmission TaskSubmission      @relation(fields: [taskSubmissionId], references: [id], onDelete: Cascade)
+  organization   OrganizationProfile @relation(fields: [organizationId], references: [id])
+
+  @@map("task_evaluations")
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  NEEDS_REVISION
+  ACCEPTED
+  REJECTED
 }

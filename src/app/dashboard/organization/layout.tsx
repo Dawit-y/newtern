@@ -63,6 +63,11 @@ export default async function OrganizationLayout({
             icon: "UserCheck" as IconName,
             href: "/dashboard/organization/interns",
           },
+          {
+            label: "Evaluations",
+            icon: "Star" as IconName,
+            href: "/dashboard/organization/evaluations",
+          },
         ],
       },
       {
