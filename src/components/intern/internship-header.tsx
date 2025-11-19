@@ -28,7 +28,8 @@ interface Props {
 
 export default function InternshipHeader({ internship }: Props) {
   const pathname = usePathname();
-  const canApply = !pathname.endsWith("/apply");
+  const canApply =
+    !pathname.endsWith("/apply") && internship?.userApplication === null;
   const isAccepted = internship?.userApplication?.status === "ACCEPTED";
   const isPending = internship?.userApplication?.status === "PENDING";
   const isRejected = internship?.userApplication?.status === "REJECTED";

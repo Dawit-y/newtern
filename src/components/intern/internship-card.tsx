@@ -16,7 +16,8 @@ import {
 
 import { type RouterOutputs } from "@/trpc/react";
 
-type Internship = RouterOutputs["internships"]["listForIntern"][number];
+type Internship =
+  RouterOutputs["internships"]["listForIntern"]["items"][number];
 
 export default function InternshipCard({
   internship,
