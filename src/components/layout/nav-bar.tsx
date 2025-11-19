@@ -59,7 +59,7 @@ export default function NavBar({ links = [] }: HeaderProps) {
   if (role === "INTERN") dashboardPath = "/dashboard/intern";
 
   return (
-    <header className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 flex h-16 items-center justify-between border-b px-4 backdrop-blur lg:px-6">
+    <header className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 flex h-16 w-full items-center justify-between border-b px-4 backdrop-blur lg:px-6">
       {/* Logo */}
       <Link href="/" className="flex items-center justify-center">
         <Briefcase className="text-primary h-8 w-8" />

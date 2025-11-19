@@ -65,13 +65,17 @@ export default function MyInternshipCard({
       <CardContent className="flex flex-1 flex-col gap-6">
         {/* Progress Section - Always in the same position */}
         <div className="flex-shrink-0">
-          <div className="mb-1 flex justify-between text-sm">
-            <span>Progress</span>
-            <span>
-              {progress?.progress ?? 0}/{internship._count.tasks} tasks
-            </span>
-          </div>
-          <Progress value={(progress?.progress ?? 0) * 10} />
+          {appStatus !== "PENDING" && (
+            <>
+              <div className="mb-1 flex justify-between text-sm">
+                <span>Progress</span>
+                <span>
+                  {progress?.progress ?? 0}/{internship._count.tasks} tasks
+                </span>
+              </div>
+              <Progress value={(progress?.progress ?? 0) * 10} />
+            </>
+          )}
         </div>
 
         {isCompleted && (

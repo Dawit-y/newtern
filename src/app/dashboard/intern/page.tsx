@@ -11,23 +11,20 @@ import {
   TrendingUp,
   Search,
   Filter,
-  Star,
   Download,
   ArrowRight,
   Trophy,
   Target,
   Zap,
+  Star,
 } from "lucide-react";
 
-// UI Components
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import InternshipCard from "@/components/intern/internship-card";
-import MyInternshipCard from "@/components/intern/my-internship-card";
 import {
   Pagination,
   PaginationContent,
@@ -37,29 +34,30 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 
+import InternshipCard from "@/components/intern/internship-card";
+import MyInternshipCard from "@/components/intern/my-internship-card";
+
 export default function InternDashboard() {
   const { data: session } = useSession();
   const [page, setPage] = useState(0);
   const take = 10;
-
-  // Filters
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTab, setSelectedTab] = useState("browse");
 
-  // Data
   const { data: internships, isLoading: loadingPublic } =
     api.internships.listForIntern.useQuery({
       skip: page * take,
       take,
     });
+
   const { data: myInternships, isLoading: loadingMy } =
     api.internships.myInternships.useQuery();
 
   const totalPages = Math.ceil((internships?.total ?? 0) / take);
 
-  // Derived Stats
   const stats = useMemo(() => {
-    if (!myInternships) return { active: 0, completed: 0, tasks: 0, rating: 0 };
+    if (!myInternships)
+      return { active: 0, completed: 0, tasks: 0, rating: "0" };
 
     const active = myInternships.filter(
       (i) => i.internshipProgress?.status === "IN_PROGRESS",
@@ -71,92 +69,95 @@ export default function InternDashboard() {
       (sum, i) => sum + (i.internshipProgress?.progress ?? 0),
       0,
     );
+
+    const rated = myInternships.filter(
+      (i) => i.internshipProgress?.status === "COMPLETED" && i.rating,
+    );
     const avgRating =
-      myInternships
-        .filter(
-          (i) => i.internshipProgress?.status === "COMPLETED" && i?.rating,
-        )
-        .reduce((sum, i) => sum + (i?.rating ?? 0), 0) / completed || 0;
+      rated.length > 0
+        ? rated.reduce((sum, i) => sum + (i.rating ?? 0), 0) / rated.length
+        : 0;
 
     return { active, completed, tasks, rating: avgRating.toFixed(1) };
   }, [myInternships]);
 
-  // Filter internships
   const filteredInternships = useMemo(() => {
-    if (!internships) return [];
+    if (!internships?.items) return [];
     return internships.items.filter(
       (i) =>
-        i.title.toLowerCase().includes(searchTerm.toLowerCase()) ??
+        i.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         i.organization.organizationName
           .toLowerCase()
           .includes(searchTerm.toLowerCase()),
     );
-  }, [internships, searchTerm]);
+  }, [internships?.items, searchTerm]);
 
   return (
     <div className="bg-background min-h-screen">
-      {/* Hero */}
-      <section className="from-primary/5 via-background to-secondary/5 border-b bg-gradient-to-br">
-        <div className="container px-4 py-12 md:py-16">
-          <div className="mx-auto max-w-5xl text-center">
-            <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
+      {/* Consistent Max Width Wrapper */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Hero Section */}
+        <section className="py-12 md:py-16 lg:py-20">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
               Welcome back,{" "}
-              <span className="text-primary">{session?.user.name}</span>!
+              <span className="text-primary">
+                {session?.user.name ?? "Intern"}
+              </span>
+              !
             </h1>
-            <p className="text-muted-foreground mt-3 text-lg">
+            <p className="text-muted-foreground mt-4 text-lg">
               Track your progress, apply to new roles, and earn certificates.
             </p>
 
             {/* Stats Grid */}
-            <div className="mt-10 grid gap-4 md:grid-cols-4">
+            <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard
-                icon={<Briefcase className="h-5 w-5" />}
-                label="Active Applications"
+                icon={<Briefcase className="h-6 w-6" />}
+                label="Active Internships"
                 value={stats.active}
-                trend="+2 this month"
+                trend="+12% this month"
               />
               <StatCard
-                icon={<CheckCircle className="h-5 w-5" />}
+                icon={<CheckCircle className="h-6 w-6" />}
                 label="Tasks Completed"
                 value={stats.tasks}
-                trend="Across all internships"
+                trend="Great progress!"
               />
               <StatCard
-                icon={<Award className="h-5 w-5" />}
-                label="Certificates"
+                icon={<Award className="h-6 w-6" />}
+                label="Certificates Earned"
                 value={stats.completed}
                 trend={
-                  (stats.rating as number) > 0
-                    ? `${stats.rating} average rating`
+                  parseFloat(stats.rating) > 0
+                    ? `${stats.rating}★ average`
                     : "Keep going!"
                 }
               />
               <StatCard
-                icon={<Trophy className="h-5 w-5" />}
+                icon={<Trophy className="h-6 w-6" />}
                 label="Badges"
                 value="3"
                 trend="2 more to unlock"
               />
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Tabs Section */}
-      <section className="container px-4 py-8">
+        {/* Tabs Section - Full Width Inside Container */}
         <Tabs
           value={selectedTab}
           onValueChange={setSelectedTab}
-          className="space-y-8"
+          className="space-y-8 pb-12"
         >
-          <TabsList className="grid w-full grid-cols-3 md:w-auto md:grid-cols-3">
+          <TabsList className="grid w-full grid-cols-3 md:mx-auto md:w-1/2 md:grid-cols-3">
             <TabsTrigger value="browse">Browse</TabsTrigger>
             <TabsTrigger value="my-internships">My Internships</TabsTrigger>
             <TabsTrigger value="achievements">Achievements</TabsTrigger>
           </TabsList>
 
           {/* Browse Tab */}
-          <TabsContent value="browse" className="space-y-6">
+          <TabsContent value="browse" className="space-y-8">
             <div className="flex flex-col gap-4 md:flex-row">
               <div className="relative flex-1">
                 <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
@@ -177,11 +178,11 @@ export default function InternDashboard() {
             ) : filteredInternships.length === 0 ? (
               <EmptyState
                 title="No internships found"
-                description="Try adjusting your search or filters."
+                description="Try adjusting your search or remove filters."
               />
             ) : (
-              <div className="flex-col space-y-5">
-                <div className="mb-4 grid gap-6 md:grid-cols-2">
+              <>
+                <div className="grid gap-6 md:grid-cols-2">
                   {filteredInternships.map((internship) => (
                     <InternshipCard
                       key={internship.id}
@@ -189,63 +190,63 @@ export default function InternDashboard() {
                     />
                   ))}
                 </div>
-                <Pagination>
-                  <PaginationContent>
-                    {/* Previous Button */}
-                    <PaginationItem>
-                      <PaginationPrevious
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setPage((p) => Math.max(0, p - 1));
-                        }}
-                      />
-                    </PaginationItem>
 
-                    {/* Numbered Pages */}
-                    {Array.from({ length: totalPages }, (_, i) => (
-                      <PaginationItem key={i}>
-                        <PaginationLink
+                {totalPages > 1 && (
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
                           href="#"
-                          isActive={page === i}
                           onClick={(e) => {
                             e.preventDefault();
-                            setPage(i);
+                            setPage((p) => Math.max(0, p - 1));
                           }}
-                        >
-                          {i + 1}
-                        </PaginationLink>
+                        />
                       </PaginationItem>
-                    ))}
 
-                    {/* Next Button */}
-                    <PaginationItem>
-                      <PaginationNext
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (page + 1 < totalPages) setPage(page + 1);
-                        }}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              </div>
+                      {Array.from({ length: totalPages }, (_, i) => (
+                        <PaginationItem key={i}>
+                          <PaginationLink
+                            href="#"
+                            isActive={page === i}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setPage(i);
+                            }}
+                          >
+                            {i + 1}
+                          </PaginationLink>
+                        </PaginationItem>
+                      ))}
+
+                      <PaginationItem>
+                        <PaginationNext
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (page + 1 < totalPages) setPage(page + 1);
+                          }}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                )}
+              </>
             )}
           </TabsContent>
 
           {/* My Internships Tab */}
-          <TabsContent value="my-internships" className="space-y-6">
+          <TabsContent value="my-internships" className="space-y-8">
             {loadingMy ? (
               <div className="grid gap-6 md:grid-cols-2">
-                {Array.from({ length: 2 }, (_, i) => (
+                {Array.from({ length: 4 }).map((_, i) => (
                   <Card key={i}>
                     <CardHeader>
                       <Skeleton className="h-6 w-3/4" />
-                      <Skeleton className="mt-2 h-4 w-full" />
+                      <Skeleton className="mt-4 h-4 w-full" />
                     </CardHeader>
                     <CardContent>
-                      <Skeleton className="h-20 w-full" />
+                      <Skeleton className="h-32 w-full" />
                     </CardContent>
                   </Card>
                 ))}
@@ -256,7 +257,7 @@ export default function InternDashboard() {
                 description="Browse internships and apply to get started!"
                 action={
                   <Button onClick={() => setSelectedTab("browse")}>
-                    Browse Now <ArrowRight className="ml-2 h-4 w-4" />
+                    Browse Internships <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 }
               />
@@ -274,13 +275,12 @@ export default function InternDashboard() {
 
           {/* Achievements Tab */}
           <TabsContent value="achievements" className="space-y-8">
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-6 lg:grid-cols-2">
               {/* Certificates */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Award className="h-5 w-5" />
-                    Certificates Earned
+                    <Award className="h-5 w-5" /> Certificates Earned
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -288,7 +288,7 @@ export default function InternDashboard() {
                     ?.filter(
                       (i) => i.internshipProgress?.status === "COMPLETED",
                     )
-                    .slice(0, 3)
+                    .slice(0, 5)
                     .map((i) => (
                       <div
                         key={i.id}
@@ -312,24 +312,28 @@ export default function InternDashboard() {
                   )}
                 </CardContent>
               </Card>
+
               {/* Skills Progress */}
+
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5" />
-                    Skills Progress
+                    <TrendingUp className="h-5 w-5" /> Skills Progress
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  {["React", "UI/UX", "Node.js", "Teamwork"].map((skill, i) => (
+                <CardContent className="space-y-6">
+                  {[
+                    { skill: "React", level: 85 },
+                    { skill: "UI/UX Design", level: 78 },
+                    { skill: "Node.js", level: 62 },
+                    { skill: "Team Collaboration", level: 90 },
+                  ].map(({ skill, level }) => (
                     <div key={skill} className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>{skill}</span>
-                        <span className="font-medium">
-                          {[85, 70, 60, 90][i]}%
-                        </span>
+                        <span className="font-medium">{level}%</span>
                       </div>
-                      <Progress value={[85, 70, 60, 90][i]} />
+                      <Progress value={level} />
                     </div>
                   ))}
                 </CardContent>
@@ -342,41 +346,41 @@ export default function InternDashboard() {
                 <CardTitle>Achievement Badges</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
                   <BadgeItem
-                    icon={<Zap className="h-8 w-8 text-yellow-500" />}
+                    icon={<Zap className="h-10 w-10 text-yellow-500" />}
                     title="First Win"
-                    desc="Applied to first internship"
+                    desc="Applied to first role"
                     active
                   />
                   <BadgeItem
-                    icon={<Target className="h-8 w-8 text-blue-500" />}
+                    icon={<Target className="h-10 w-10 text-blue-500" />}
                     title="On Time"
-                    desc="Completed 3 tasks on time"
+                    desc="3 tasks on time"
                     active
                   />
                   <BadgeItem
-                    icon={<Trophy className="h-8 w-8 text-purple-500" />}
+                    icon={<Trophy className="h-10 w-10 text-purple-500" />}
                     title="Top Performer"
-                    desc="5-star rating"
-                    active
+                    desc="5★ rating"
+                    active={parseFloat(stats.rating) >= 4.8}
                   />
                   <BadgeItem
-                    icon={<Star className="h-8 w-8 text-gray-400" />}
+                    icon={<Star className="h-10 w-10 text-gray-400" />}
                     title="Streak Master"
-                    desc="7-day streak"
+                    desc="7-day login streak"
                   />
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
-      </section>
+      </div>
     </div>
   );
 }
 
-// Reusable Components
+// Reusable Components (unchanged but cleaned up)
 function StatCard({
   icon,
   label,
@@ -390,14 +394,14 @@ function StatCard({
 }) {
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-muted-foreground text-sm font-medium">
           {label}
         </CardTitle>
         {icon}
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
+        <div className="text-3xl font-bold">{value}</div>
         <p className="text-muted-foreground text-xs">{trend}</p>
       </CardContent>
     </Card>
@@ -417,11 +421,11 @@ function BadgeItem({
 }) {
   return (
     <div
-      className={`rounded-lg border p-4 text-center transition-opacity ${active ? "" : "opacity-50"}`}
+      className={`flex flex-col items-center rounded-lg border p-5 text-center transition-opacity ${active ? "" : "opacity-40"}`}
     >
       {icon}
-      <h4 className="mt-2 text-sm font-medium">{title}</h4>
-      <p className="text-muted-foreground mt-1 text-xs">{desc}</p>
+      <h4 className="mt-3 font-semibold">{title}</h4>
+      <p className="text-muted-foreground text-xs">{desc}</p>
     </div>
   );
 }
@@ -436,30 +440,28 @@ function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <Card className="p-12 text-center">
-      <div className="text-muted-foreground mx-auto mb-4 h-12 w-12">
-        <Briefcase className="h-full w-full" />
-      </div>
-      <h3 className="text-lg font-semibold">{title}</h3>
+    <div className="py-16 text-center">
+      <Briefcase className="text-muted-foreground mx-auto h-16 w-16" />
+      <h3 className="mt-6 text-lg font-semibold">{title}</h3>
       <p className="text-muted-foreground mt-2">{description}</p>
-      {action && <div className="mt-4">{action}</div>}
-    </Card>
+      {action && <div className="mt-6">{action}</div>}
+    </div>
   );
 }
 
 function InternshipGridSkeleton() {
   return (
     <div className="grid gap-6 md:grid-cols-2">
-      {Array.from({ length: 4 }, (_, i) => (
+      {Array.from({ length: 4 }).map((_, i) => (
         <Card key={i}>
           <CardHeader>
-            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-7 w-4/5" />
             <Skeleton className="mt-2 h-4 w-full" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-3">
             <Skeleton className="h-4 w-full" />
-            <Skeleton className="mt-2 h-4 w-2/3" />
-            <Skeleton className="mt-4 h-10 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="mt-6 h-10 w-full" />
           </CardContent>
         </Card>
       ))}

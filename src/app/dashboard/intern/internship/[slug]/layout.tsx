@@ -28,7 +28,7 @@ export default async function InternshipLayout({
   }
 
   return (
-    <main className="from-background to-muted/20 flex-1 bg-gradient-to-b">
+    <main className="from-background to-muted/20 flex items-center justify-center bg-gradient-to-b">
       <div className="container px-4 py-8 md:px-6">
         <Link href="/dashboard/intern">
           <Button variant="ghost" className="mb-6 bg-transparent">
@@ -38,7 +38,7 @@ export default async function InternshipLayout({
         </Link>
 
         <InternshipHeader internship={internship} />
-        <div className="container">{children}</div>
+        <div className="">{children}</div>
       </div>
     </main>
   );
